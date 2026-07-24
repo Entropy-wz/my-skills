@@ -24,46 +24,7 @@ $skillsDir = Join-Path $repoRoot "skills"
 $kitsDir = Join-Path $repoRoot "kits"
 $destDir = Join-Path $HOME ".cursor\skills"
 
-function Get-SkillSources {
-    param(
-        [string]$SkillsDir,
-        [string]$KitsDir
-    )
-
-    $sources = @()
-
-    if (Test-Path $SkillsDir) {
-        Get-ChildItem -Path $SkillsDir -Directory |
-            Where-Object { $_.Name -notlike "_*" } |
-            ForEach-Object {
-                $skillMd = Join-Path $_.FullName "SKILL.md"
-                if (Test-Path $skillMd) {
-                    $sources += [PSCustomObject]@{
-                        Name = $_.Name
-                        Path = $_.FullName
-                        Kind = "skill"
-                    }
-                }
-            }
-    }
-
-    if (Test-Path $KitsDir) {
-        Get-ChildItem -Path $KitsDir -Directory |
-            Where-Object { $_.Name -notlike "_*" } |
-            ForEach-Object {
-                $skillMd = Join-Path $_.FullName "skill\SKILL.md"
-                if (Test-Path $skillMd) {
-                    $sources += [PSCustomObject]@{
-                        Name = $_.Name
-                        Path = $_.FullName
-                        Kind = "kit"
-                    }
-                }
-            }
-    }
-
-    return $sources
-}
+. (Join-Path $PSScriptRoot "lib\SkillSources.ps1")
 
 function Remove-SkillDest {
     param([Parameter(Mandatory = $true)][string]$Path)

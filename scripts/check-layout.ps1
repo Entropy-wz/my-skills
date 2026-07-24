@@ -15,6 +15,7 @@ $required = @(
     "docs\README.md",
     "scripts\install.ps1",
     "scripts\install.sh",
+    "scripts\lib\SkillSources.ps1",
     "README.md"
 )
 
@@ -30,24 +31,13 @@ foreach ($rel in $required) {
     }
 }
 
-# Discover skills the same way install.ps1 intends
+# Same discovery as install.ps1 (shared lib)
 $skillsDir = Join-Path $repoRoot "skills"
 $kitsDir = Join-Path $repoRoot "kits"
-$skillNames = @()
-$kitNames = @()
-
-Get-ChildItem -Path $skillsDir -Directory |
-    Where-Object { $_.Name -notlike "_*" -and (Test-Path (Join-Path $_.FullName "SKILL.md")) } |
-    ForEach-Object { $skillNames += $_.Name }
-
-if (Test-Path $kitsDir) {
-    Get-ChildItem -Path $kitsDir -Directory |
-        Where-Object {
-            $_.Name -notlike "_*" -and
-            (Test-Path (Join-Path $_.FullName "skill\SKILL.md"))
-        } |
-        ForEach-Object { $kitNames += $_.Name }
-}
+. (Join-Path $PSScriptRoot "lib\SkillSources.ps1")
+$sources = @(Get-SkillSources -SkillsDir $skillsDir -KitsDir $kitsDir)
+$skillNames = @($sources | Where-Object Kind -eq "skill" | ForEach-Object { $_.Name })
+$kitNames = @($sources | Where-Object Kind -eq "kit" | ForEach-Object { $_.Name })
 
 Write-Host ""
 Write-Host ("discover skills/: {0}" -f ($skillNames -join ", "))

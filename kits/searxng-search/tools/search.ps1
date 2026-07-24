@@ -80,18 +80,35 @@ try {
 catch {
     $msg = [string]$_.Exception.Message
     $isDown = $false
-    foreach ($pat in @(
-            "Unable to connect",
-            "actively refused",
-            "No connection",
-            "Failed to connect",
-            "remote name could not be resolved"
-        )) {
-        if ($msg -like ("*" + $pat + "*")) { $isDown = $true; break }
+
+    # Prefer typed network failures over brittle message matching.
+    $ex = $_.Exception
+    while ($null -ne $ex) {
+        if ($ex -is [System.Net.Sockets.SocketException] -or
+            $ex -is [System.Net.WebException] -or
+            $ex -is [System.Net.Http.HttpRequestException]) {
+            $isDown = $true
+            break
+        }
+        $ex = $ex.InnerException
     }
-    # Chinese Windows often uses localized connect errors
-    if ($msg -match "[\u65e0\u6cd5\u8fde\u63a5]|[\u62d2\u7edd]|[\u8fdc\u7a0b\u670d\u52a1\u5668]") {
-        $isDown = $true
+
+    if (-not $isDown) {
+        foreach ($pat in @(
+                "Unable to connect",
+                "actively refused",
+                "No connection",
+                "Failed to connect",
+                "remote name could not be resolved",
+                "无法连接",
+                "未能解析",
+                "拒绝",
+                "远程服务器",
+                "没有连接",
+                "连接失败"
+            )) {
+            if ($msg -like ("*" + $pat + "*")) { $isDown = $true; break }
+        }
     }
 
     if ($isDown) {
