@@ -95,14 +95,14 @@ catch {
     }
 
     if ($isDown) {
-        Write-Error ("SearXNG is not running or unreachable ({0}). Start: powershell -File kits/searxng-search/tools/up.ps1" -f $BaseUrl)
+        Write-Host ("ERROR: SearXNG is not running or unreachable ({0}). Start: powershell -File kits/searxng-search/tools/up.ps1" -f $BaseUrl) -ForegroundColor Red
         exit 2
     }
     if ($msg -match "403|Forbidden") {
-        Write-Error "SearXNG returned 403: enable json in search.formats, then docker compose restart"
+        Write-Host "ERROR: SearXNG returned 403: enable json in search.formats, then docker compose restart" -ForegroundColor Red
         exit 3
     }
-    Write-Error ("SearXNG request failed: {0}" -f $msg)
+    Write-Host ("ERROR: SearXNG request failed: {0}" -f $msg) -ForegroundColor Red
     exit 1
 }
 
