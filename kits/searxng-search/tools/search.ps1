@@ -1,9 +1,9 @@
-<#
+﻿<#
 .SYNOPSIS
     Query local SearXNG JSON API and print Markdown results for agents.
 .EXAMPLE
     ./search.ps1 -Query "digital finance case study"
-    ./search.ps1 -Query "数字金融 案例" -Language zh-CN -Count 8
+    ./search.ps1 -Query "鏁板瓧閲戣瀺 妗堜緥" -Language zh-CN -Count 8
 #>
 param(
     [Parameter(Mandatory = $true, Position = 0)]
@@ -39,11 +39,11 @@ function Format-Results {
     $engineList = ($engines | Select-Object -Unique) -join ","
     if (-not $engineList) { $engineList = "(unknown)" }
 
-    Write-Output ("查询: {0} | 语言: {1} | 命中: {2} 条 | 引擎: {3}" -f $QueryText, $Lang, $results.Count, $engineList)
+    Write-Output ("Query: {0} | Lang: {1} | Hits: {2} | Engines: {3}" -f $QueryText, $Lang, $results.Count, $engineList)
     Write-Output ""
 
     if ($results.Count -eq 0) {
-        Write-Output "(无结果。可改 language、换关键词，或检查引擎是否被上游限流。)"
+        Write-Output "(No results. Try another language/keywords, or wait if upstream rate-limited.)"
         return
     }
 
@@ -56,15 +56,15 @@ function Format-Results {
 
         Write-Output ("{0}. {1}" -f $i, $title)
         Write-Output ("   URL: {0}" -f $url)
-        Write-Output ("   摘要: {0}" -f $snippet)
-        Write-Output ("   来源引擎: {0}" -f $eng)
+        Write-Output ("   Snippet: {0}" -f $snippet)
+        Write-Output ("   Engine: {0}" -f $eng)
         Write-Output ""
         $i++
     }
 
     if ($Payload.suggestions -and @($Payload.suggestions).Count -gt 0) {
         $sug = (@($Payload.suggestions) | Select-Object -First 5) -join "; "
-        Write-Output ("建议关键词: {0}" -f $sug)
+        Write-Output ("Suggestions: {0}" -f $sug)
     }
 }
 
@@ -78,21 +78,31 @@ try {
     $resp = Invoke-RestMethod -Uri $uri -Method Get -TimeoutSec $TimeoutSec
 }
 catch {
-    $msg = $_.Exception.Message
-    if ($msg -match "Unable to connect|actively refused|No connection|无法连接|拒绝|未能解析|远程服务器") {
-        $hint = @(
-            "SearXNG is not running or unreachable ($BaseUrl).",
-            "Start it with: powershell -File kits/searxng-search/tools/up.ps1",
-            'Then check: curl "http://127.0.0.1:8080/search?q=test&format=json"'
-        ) -join " "
-        Write-Error $hint
+    $msg = [string]$_.Exception.Message
+    $isDown = $false
+    foreach ($pat in @(
+            "Unable to connect",
+            "actively refused",
+            "No connection",
+            "Failed to connect",
+            "remote name could not be resolved"
+        )) {
+        if ($msg -like ("*" + $pat + "*")) { $isDown = $true; break }
+    }
+    # Chinese Windows often uses localized connect errors
+    if ($msg -match "[\u65e0\u6cd5\u8fde\u63a5]|[\u62d2\u7edd]|[\u8fdc\u7a0b\u670d\u52a1\u5668]") {
+        $isDown = $true
+    }
+
+    if ($isDown) {
+        Write-Error ("SearXNG is not running or unreachable ({0}). Start: powershell -File kits/searxng-search/tools/up.ps1" -f $BaseUrl)
         exit 2
     }
     if ($msg -match "403|Forbidden") {
-        Write-Error "SearXNG 返回 403：多半未开启 JSON（settings 中 search.formats 需含 json）。改完后: docker compose restart"
+        Write-Error "SearXNG returned 403: enable json in search.formats, then docker compose restart"
         exit 3
     }
-    Write-Error "SearXNG 请求失败: $msg"
+    Write-Error ("SearXNG request failed: {0}" -f $msg)
     exit 1
 }
 
