@@ -30,7 +30,8 @@ hunk diff origin/main...HEAD
 ```
 
 Then wait briefly and re-run `hunk session list`. Prefer scoping later commands
-with `--repo <repoRoot>` or the `sessionId`.
+with the `sessionId` from that list (most reliable on Windows). `--repo <repoRoot>`
+also works when path matching succeeds.
 
 Requires `hunk` on PATH (`npm i -g hunkdiff`). If install is missing, install or
 tell the user once — then launch.
