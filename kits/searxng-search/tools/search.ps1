@@ -95,7 +95,7 @@ catch {
     }
 
     if ($isDown) {
-        Write-Host ("ERROR: SearXNG is not running or unreachable ({0}). Start: powershell -File kits/searxng-search/tools/up.ps1" -f $BaseUrl) -ForegroundColor Red
+        Write-Host ("ERROR: SearXNG is not running or unreachable ({0}). Start: powershell -File tools/up.ps1 (from this skill/kit directory)" -f $BaseUrl) -ForegroundColor Red
         exit 2
     }
     if ($msg -match "403|Forbidden") {
