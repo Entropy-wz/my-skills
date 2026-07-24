@@ -43,7 +43,8 @@ foreach ($c in @("C:\Program Files\Git\bin\bash.exe", "bash")) {
     }
 }
 
-$fakeKit = Join-Path $repoRoot "kits\_smoke_optional_kit"
+# Must NOT start with "_" — installers skip _* dirs, which would hide the set -e bug.
+$fakeKit = Join-Path $repoRoot "kits\smoke-optional-kit"
 New-Item -ItemType Directory -Force -Path (Join-Path $fakeKit "docker") | Out-Null
 Set-Content -Path (Join-Path $fakeKit "docker\noop.txt") -Value "smoke"
 
