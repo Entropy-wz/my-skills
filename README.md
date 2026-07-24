@@ -13,7 +13,8 @@
 │   ├── commit-message/    # 生成 Git 提交信息
 │   ├── code-review/       # 代码审查清单
 │   ├── merge-code-review/ # 合并前的 mentor 式 bug 审查（advisory）
-│   └── work-lanes/        # 本地工作三车道 + 远程动作门禁
+│   ├── work-lanes/        # 本地工作三车道 + 远程动作门禁
+│   └── hunk-walkthrough/  # 驱动 Hunk 终端 diff 会话（只读、不写评论）
 ├── scripts/               # 安装脚本
 │   ├── install.ps1        # Windows / PowerShell
 │   └── install.sh         # macOS / Linux
