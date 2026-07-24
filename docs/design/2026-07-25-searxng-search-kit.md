@@ -45,3 +45,9 @@ See issue checklist; verified by `tools/up.ps1` + EN/ZH `search.ps1` smokes.
 - Bing is disabled in SearXNG defaults; settings explicitly set `disabled: false`.
 - Upstream CAPTCHA/429 on duckduckgo/brave is expected under heavy use; bing + wikipedia soften empty results.
 
+
+## Implementation notes
+
+- Bing is disabled in SearXNG defaults; settings explicitly set `disabled: false`.
+- Upstream CAPTCHA/429 on duckduckgo/brave is expected under heavy use; bing + wikipedia soften empty results.
+
