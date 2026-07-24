@@ -80,16 +80,12 @@ try {
 catch {
     $msg = $_.Exception.Message
     if ($msg -match "Unable to connect|actively refused|No connection|无法连接|拒绝|未能解析|远程服务器") {
-        Write-Error @"
-SearXNG 未运行或无法连接 ($BaseUrl)。
-
-请先执行:
-  cd kits/searxng-search
-  powershell -File tools/up.ps1
-
-然后自检:
-  curl `"http://127.0.0.1:8080/search?q=test&format=json`"
-"@
+        $hint = @(
+            "SearXNG is not running or unreachable ($BaseUrl).",
+            "Start it with: powershell -File kits/searxng-search/tools/up.ps1",
+            'Then check: curl "http://127.0.0.1:8080/search?q=test&format=json"'
+        ) -join " "
+        Write-Error $hint
         exit 2
     }
     if ($msg -match "403|Forbidden") {
