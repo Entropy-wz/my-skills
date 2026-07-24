@@ -14,7 +14,8 @@
 │   ├── code-review/       # 代码审查清单
 │   ├── merge-code-review/ # 合并前的 mentor 式 bug 审查（advisory）
 │   ├── work-lanes/        # 本地工作三车道 + 远程动作门禁
-│   └── hunk-walkthrough/  # 驱动 Hunk 终端 diff 会话（只读、不写评论）
+│   ├── hunk-walkthrough/  # 驱动 Hunk 终端 diff 会话（只读、不写评论）
+│   └── build-loop/        # 出方案→选择→分模式实现→跑测试→交给 review 的编排回路
 ├── scripts/               # 安装脚本
 │   ├── install.ps1        # Windows / PowerShell
 │   └── install.sh         # macOS / Linux
