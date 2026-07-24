@@ -92,6 +92,23 @@ if ($failed) {
     exit 1
 }
 
+# Optional install regression (review findings) when present
+$smoke = Join-Path $PSScriptRoot "smoke-install.ps1"
+if (Test-Path $smoke) {
+    Write-Host ""
+    Write-Host "---- smoke-install ----"
+    & powershell -ExecutionPolicy Bypass -File $smoke
+    if ($LASTEXITCODE -ne 0) {
+        $failed = $true
+    }
+}
+
+if ($failed) {
+    Write-Host ""
+    Write-Host "check-layout: FAILED"
+    exit 1
+}
+
 Write-Host ""
 Write-Host "check-layout: PASSED"
 exit 0

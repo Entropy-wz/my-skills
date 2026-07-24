@@ -68,7 +68,8 @@ bash scripts/install.sh --copy
 ## 冒烟检查
 
 ```powershell
-./scripts/check-layout.ps1
+./scripts/check-layout.ps1    # layout + discovery; also runs smoke-install
+./scripts/smoke-install.ps1   # install.sh set -e / kit tools / wipe guards
 ```
 
 ## 新建 skill
