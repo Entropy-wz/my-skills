@@ -53,6 +53,18 @@ Write-Host ""
 Write-Host ("discover skills/: {0}" -f ($skillNames -join ", "))
 Write-Host ("discover kits/ : {0}" -f ($(if ($kitNames.Count) { $kitNames -join ", " } else { "(none yet)" })))
 
+# searxng kit expected once landed
+$searxSkill = Join-Path $repoRoot "kits\searxng-search\skill\SKILL.md"
+if (Test-Path $searxSkill) {
+    if ($kitNames -notcontains "searxng-search") {
+        Write-Host "[FAIL] kits/searxng-search/skill present but not discovered"
+        $failed = $true
+    }
+    else {
+        Write-Host "[ok]   kit searxng-search discoverable"
+    }
+}
+
 if ($skillNames.Count -lt 1) {
     Write-Host "[FAIL] expected ≥1 installable skill under skills/"
     $failed = $true
