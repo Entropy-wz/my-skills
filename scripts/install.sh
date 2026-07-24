@@ -32,6 +32,9 @@ fi
 mkdir -p "$DEST_DIR"
 
 # Emit name|path|kind lines (skills first, then kits).
+# path = skill dir for kind=skill; kit root for kind=kit.
+# Always ends with status 0 so set -e + command substitution cannot abort
+# when the last scanned directory simply lacks SKILL.md.
 collect_sources() {
   local dir name skill_md skill_dir
 
@@ -55,13 +58,14 @@ collect_sources() {
       skill_dir="${dir}skill"
       skill_md="${skill_dir}/SKILL.md"
       if [ -f "$skill_md" ]; then
-        printf '%s|%s|kit\n' "$name" "$skill_dir"
+        printf '%s|%s|kit\n' "$name" "${dir%/}"
       fi
     done
   fi
+
+  return 0
 }
 
-# Return 0 if name is already in space-separated SEEN_LIST (skill names have no spaces).
 name_seen() {
   local needle="$1"
   local n
@@ -73,22 +77,74 @@ name_seen() {
   return 1
 }
 
+# Remove dest: unlink symlink/junction only; never follow into the repo.
+remove_dest() {
+  local link="$1"
+  if [ ! -e "$link" ] && [ ! -L "$link" ]; then
+    return 0
+  fi
+  if [ -L "$link" ]; then
+    rm -f "$link"
+  else
+    rm -rf "$link"
+  fi
+}
+
+# Place path into dest via copy or symlink.
+place_path() {
+  local src="$1" dest="$2"
+  if [ "$COPY" -eq 1 ]; then
+    if [ -d "$src" ]; then
+      cp -R "$src" "$dest"
+    else
+      cp "$src" "$dest"
+    fi
+  else
+    ln -s "$src" "$dest"
+  fi
+}
+
+install_skill() {
+  local name="$1" path="$2"
+  local link="$DEST_DIR/$name"
+
+  remove_dest "$link"
+  place_path "$path" "$link"
+  echo "[$([ "$COPY" -eq 1 ] && echo copied || echo linked)] $name"
+}
+
+# Kit: SKILL.md at dest root + sibling tools/docker/agents/README from kit root.
+install_kit() {
+  local name="$1" kit_root="$2"
+  local link="$DEST_DIR/$name"
+  local skill_dir="$kit_root/skill"
+  local label="kit:$name"
+  local f sibling
+
+  remove_dest "$link"
+  mkdir -p "$link"
+
+  # skill/* → dest/
+  for f in "$skill_dir"/* "$skill_dir"/.[!.]*; do
+    [ -e "$f" ] || continue
+    place_path "$f" "$link/$(basename "$f")"
+  done
+
+  for sibling in tools docker agents README.md; do
+    if [ -e "$kit_root/$sibling" ]; then
+      place_path "$kit_root/$sibling" "$link/$sibling"
+    fi
+  done
+
+  echo "[$([ "$COPY" -eq 1 ] && echo copied || echo linked)] $label"
+}
+
 install_one() {
   local name="$1" path="$2" kind="$3"
-  local link="$DEST_DIR/$name"
-  local label="$name"
   if [ "$kind" = "kit" ]; then
-    label="kit:$name"
-  fi
-
-  rm -rf "$link"
-
-  if [ "$COPY" -eq 1 ]; then
-    cp -R "$path" "$link"
-    echo "[copied] $label"
+    install_kit "$name" "$path"
   else
-    ln -s "$path" "$link"
-    echo "[linked] $label"
+    install_skill "$name" "$path"
   fi
 }
 
@@ -97,7 +153,10 @@ skill_count=0
 kit_count=0
 found_any=0
 
-# Process substitution works on Bash 3.2; avoid mapfile / associative arrays.
+SOURCE_FILE="$(mktemp)"
+trap 'rm -f "$SOURCE_FILE"' EXIT
+collect_sources >"$SOURCE_FILE"
+
 while IFS='|' read -r name path kind || [ -n "${name:-}" ]; do
   [ -n "${name:-}" ] || continue
   found_any=1
@@ -115,9 +174,7 @@ while IFS='|' read -r name path kind || [ -n "${name:-}" ]; do
   else
     skill_count=$((skill_count + 1))
   fi
-done <<EOF
-$(collect_sources)
-EOF
+done <"$SOURCE_FILE"
 
 if [ "$found_any" -eq 0 ]; then
   echo "未发现任何可安装 skill（skills/*/SKILL.md 或 kits/*/skill/SKILL.md）" >&2

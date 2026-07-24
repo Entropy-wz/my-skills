@@ -13,7 +13,7 @@ Local meta-search through Dockerized SearXNG. No Brave/Tavily/SerpAPI keys.
 2. Start the instance once:
 
 ```powershell
-cd kits/searxng-search
+# From installed skill dir (~/.cursor/skills/searxng-search) or kit checkout:
 powershell -File tools/up.ps1
 ```
 
@@ -33,23 +33,25 @@ Do **not** use for pure local-code questions that need no web data.
 
 ## How to search
 
-From the toolkit repo root (or absolute path to this kit):
+After `scripts/install.*`, this skill folder contains `SKILL.md` plus sibling `tools/` (and `docker/`). Run from the installed skill directory (or any path that resolves `tools/search.ps1`):
 
 ```powershell
-powershell -File kits/searxng-search/tools/search.ps1 -Query "<query>" -Language auto -Count 8
+powershell -File tools/search.ps1 -Query "<query>" -Language auto -Count 8
 ```
 
 Chinese-heavy queries:
 
 ```powershell
-powershell -File kits/searxng-search/tools/search.ps1 -Query "数字金融 案例 研究报告" -Language zh-CN -Count 8
+powershell -File tools/search.ps1 -Query "数字金融 案例 研究报告" -Language zh-CN -Count 8
 ```
 
 English:
 
 ```powershell
-powershell -File kits/searxng-search/tools/search.ps1 -Query "digital finance custody case study" -Language en -Count 8
+powershell -File tools/search.ps1 -Query "digital finance custody case study" -Language en -Count 8
 ```
+
+From the toolkit repo (before/without install), use `kits/searxng-search/tools/search.ps1` instead.
 
 ## Output
 
