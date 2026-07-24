@@ -1,59 +1,69 @@
 ---
 name: hunk-walkthrough
-description: Steer a live Hunk terminal diff session — list/get/review/navigate/reload via `hunk session`, narrate findings in chat. No inline comments. Use when the user has Hunk open or asks to walk a diff in Hunk.
+description: Steer a live Hunk terminal diff session — launch Hunk if needed, then list/get/review/navigate/reload via `hunk session`, narrate findings in chat. No inline comments. Use when the user asks to walk a diff in Hunk or review with Hunk.
 ---
 
 # Hunk walkthrough (no comments)
 
-Hunk is an interactive terminal diff viewer. The TUI is for the user — **do NOT** run
-`hunk diff`, `hunk show`, or other interactive TUI commands yourself. Drive the live
-window with `hunk session *` through the local daemon.
+Hunk is a review-first terminal diff viewer. Drive a **live** window with
+`hunk session *` through the local daemon. Narrate findings **in chat**.
 
-**This skill never adds, applies, lists, removes, or clears Hunk comments.** Findings
-and narration go in the chat. Do not run `hunk session comment …` or
-`--next-comment` / `--prev-comment`.
+**This skill never adds, applies, lists, removes, or clears Hunk comments.**
+Do not run `hunk session comment …` or `--next-comment` / `--prev-comment`.
 
-If no session exists, ask the user to launch Hunk in their terminal first, e.g.:
+## Launch (agent may open Hunk)
+
+If `hunk session list` shows no session for the target repo, **the agent should
+start Hunk itself** in a separate terminal/console (do not block the agent TTY
+on the interactive TUI):
+
+```powershell
+# Windows — new console so the TUI has a real PTY
+Start-Process cmd.exe -ArgumentList '/c','hunk diff origin/main...HEAD' -WorkingDirectory <repo>
+
+# Or: hunk show / hunk diff <other-range>
+```
 
 ```bash
-hunk diff
-hunk show
+# macOS / Linux — new terminal tab/window when available, else background + note
 hunk diff origin/main...HEAD
 ```
 
+Then wait briefly and re-run `hunk session list`. Prefer scoping later commands
+with the `sessionId` from that list (most reliable on Windows). `--repo <repoRoot>`
+also works when path matching succeeds.
+
+Requires `hunk` on PATH (`npm i -g hunkdiff`). If install is missing, install or
+tell the user once — then launch.
+
 ## Session commands (read-only subset)
 
-Scope with `--repo .` (or a `<session-id>`) when multiple sessions are open. Never touch
-any `comment` subcommand.
-
 ```bash
-hunk session list [--json]                                 # find live sessions
-hunk session get (--repo . | <id>) [--json]                # path / repo / source
-hunk session context (--repo . | <id>) [--json]            # current focus
-hunk session review (--repo . | <id>) [--json] [--include-patch]   # file/hunk structure
+hunk session list [--json]
+hunk session get (--repo . | <id>) [--json]
+hunk session context (--repo . | <id>) [--json]
+hunk session review (--repo . | <id>) [--json] [--include-patch]
 ```
 
-Navigate — absolute nav needs `--file` plus exactly one of `--hunk` / `--new-line` /
-`--old-line`:
+Navigate — `--file` plus exactly one of `--hunk` / `--new-line` / `--old-line`:
 
 ```bash
 hunk session navigate --repo . --file <path> --hunk <n>
 hunk session navigate --repo . --file <path> --new-line <n>
 ```
 
-Reload swaps the live session's contents — pass a Hunk review command after `--`:
+Reload:
 
 ```bash
 hunk session reload --repo . -- diff
-hunk session reload --repo . -- diff main...feature -- src/ui
+hunk session reload --repo . -- diff origin/main...HEAD
 hunk session reload --repo . -- show HEAD~1
 ```
 
 ## Workflow
 
-1. `hunk session list` — confirm a session exists (else ask the user to launch Hunk).
-2. `hunk session review --repo . --json` — inspect file/hunk structure first.
-3. Add `--include-patch` only when you actually need the raw diff text.
-4. `hunk session context` / `navigate …` — move to the hunk you're discussing.
-5. `hunk session reload -- <command>` — swap contents if the user wants a different diff.
-6. Narrate every finding **in chat**. Never write comments into the session.
+1. `hunk session list` — if empty for this repo, **launch Hunk** (see above), then list again.
+2. `hunk session review --repo . --json` — file/hunk structure first.
+3. `--include-patch` only when raw diff text is needed.
+4. `navigate` / `context` while discussing specific hunks.
+5. Narrate findings in chat. Never write comments into the session.

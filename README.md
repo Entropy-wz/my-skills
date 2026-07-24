@@ -1,58 +1,92 @@
-# My Skills
+# My Toolkit
 
-我个人的 [Cursor / Claude Agent Skills](https://docs.cursor.com/) 技能库。
+个人工具库：Cursor / Claude **Skills**、可运行的 **Tools**、小型 **Agents**，以及按能力打包的 **Kits**（例如自建搜索）。
 
-每个技能都是一个包含 `SKILL.md` 的目录，AI 助手（Cursor、Claude 等）可以读取并调用它们来完成特定任务，例如按我的偏好生成提交信息、执行代码审查、处理特定格式的文件等。
+由原先的纯 skills 仓库演进为混合布局（skills 保持扁平；多部件能力进 `kits/`）。
 
 ## 目录结构
 
 ```
 .
-├── skills/                # 所有技能
-│   ├── _template/         # 新建技能的模板
-│   ├── commit-message/    # 生成 Git 提交信息
-│   ├── code-review/       # 代码审查清单
-│   ├── merge-code-review/ # 合并前的 mentor 式 bug 审查（advisory）
-│   ├── work-lanes/        # 本地工作三车道 + 远程动作门禁
-│   ├── hunk-walkthrough/  # 驱动 Hunk 终端 diff 会话（只读、不写评论）
-│   └── build-loop/        # 出方案→选择→分模式实现→跑测试→交给 review 的编排回路
-├── scripts/               # 安装脚本
-│   ├── install.ps1        # Windows / PowerShell
-│   └── install.sh         # macOS / Linux
+├── skills/                # 纯编排 / 流程类技能（扁平）
+│   ├── _template/
+│   ├── build-loop/
+│   ├── code-review/
+│   ├── commit-message/
+│   ├── hunk-walkthrough/
+│   ├── merge-code-review/
+│   └── work-lanes/
+├── kits/                  # 多部件能力包（skill + tools + docker + …）
+│   ├── README.md          # kit 约定
+│   └── _template/         # 新建 kit 的模板（不安装）
+├── tools/                 # 跨 kit 共享脚本 / CLI
+├── agents/                # 跨 kit 小型 agent
+├── docs/                  # 设计文档 / ADR
+├── scripts/
+│   ├── install.ps1        # Windows：安装 skills + kit skills
+│   ├── install.sh         # macOS / Linux
+│   └── check-layout.ps1   # 布局与发现逻辑冒烟检查
 └── README.md
 ```
 
+### 放哪里？
+
+| 放这里 | 什么时候 |
+| --- | --- |
+| `skills/` | 几乎只有 `SKILL.md` 的流程/编排技能 |
+| `kits/<name>/` | 需要 docker、本地工具、小 agent 等与 skill 绑在一起 |
+| `tools/` / `agents/` | 被多个 kit 复用的共享件 |
+| `docs/` | 设计与决策（Lane A 文档） |
+
+详见 [`kits/README.md`](kits/README.md)。
+
 ## 安装到本地
 
-技能需要放在 `~/.cursor/skills/`（个人级，所有项目可用）或项目的 `.cursor/skills/` 下才能被 AI 识别。
+技能需要出现在 `~/.cursor/skills/`（或项目 `.cursor/skills/`）才会被 AI 识别。
 
-运行安装脚本会把 `skills/` 里的每个技能链接（或复制）到你的个人技能目录。
+安装脚本会安装：
+
+1. `skills/<name>/SKILL.md`（跳过 `_…`）
+2. `kits/<name>/skill/SKILL.md`（跳过 `_…`；安装名为 kit 目录名）
 
 **Windows (PowerShell):**
 
 ```powershell
 ./scripts/install.ps1
+./scripts/install.ps1 -Copy   # 无符号链接权限时用复制
 ```
 
 **macOS / Linux:**
 
 ```bash
 bash scripts/install.sh
+bash scripts/install.sh --copy
 ```
 
-安装脚本默认使用符号链接，这样修改本仓库里的技能会立即生效。加 `-Copy`（PowerShell）或 `--copy`（bash）参数可改为复制。
+默认符号链接（改仓库即生效）。`-Copy` / `--copy` 改为复制。
 
-## 新建一个技能
+## 冒烟检查
 
-1. 复制 `skills/_template` 目录并重命名为你的技能名（小写、用连字符，如 `my-new-skill`）
-2. 编辑其中的 `SKILL.md`，填写 `name`、`description` 和正文
+```powershell
+./scripts/check-layout.ps1    # layout + discovery; also runs smoke-install
+./scripts/smoke-install.ps1   # install.sh set -e / kit tools / wipe guards
+```
+
+## 新建 skill
+
+1. 复制 `skills/_template` → `skills/<name>`
+2. 编辑 `SKILL.md`
 3. 重新运行安装脚本
+
+## 新建 kit
+
+1. 复制 `kits/_template` → `kits/<name>`（不要用 `_` 前缀）
+2. 按需填写 `skill/`、`tools/`、`agents/`、`docker/`
+3. 若有 `skill/SKILL.md`，重新运行安装脚本
 
 ## SKILL.md 规范要点
 
 - `name`：最多 64 字符，仅小写字母、数字、连字符
-- `description`：说明**做什么（WHAT）**和**何时用（WHEN）**，用第三人称书写，包含触发关键词
-- 正文保持在 500 行以内，详细内容拆到同目录下的 `reference.md` 等文件
-- 避免 Windows 风格路径（用 `scripts/x.py` 而非 `scripts\x.py`）
-
-完整规范见每个技能目录里的示例。
+- `description`：说明**做什么（WHAT）**和**何时用（WHEN）**，第三人称，含触发关键词
+- 正文尽量 < 500 行；细节拆到同目录 `reference.md` 等
+- 路径用正斜杠风格（`scripts/x.py`）
