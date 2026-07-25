@@ -33,6 +33,9 @@ Before `work-lanes` Lane C push/PR, provide a repeatable pre-ship path:
 
 Umbrella for a later research pipeline: topic → SearXNG search → fetch excerpts → case-card / citation list. No paid search API.
 
+**Status:** tracker filed as [#14](https://github.com/Entropy-wz/my-skills/issues/14) (+ [#15](https://github.com/Entropy-wz/my-skills/issues/15), [#16](https://github.com/Entropy-wz/my-skills/issues/16)).  
+**Design:** [`docs/design/2026-07-25-research-case-pipeline.md`](2026-07-25-research-case-pipeline.md) (Lane A — implement later under Lane B).
+
 ## Non-goals
 
 - Replace `work-lanes` (no push / issue / PR from ship-gate)

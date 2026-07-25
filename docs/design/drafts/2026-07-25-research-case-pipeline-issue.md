@@ -1,10 +1,20 @@
 # Draft issues — research case pipeline (Track B)
 
-Lane A / brainstorming backlog. Do **not** `gh issue create` until the owner asks (usually Lane C).
+**Live tracker (created Lane C 2026-07-25) — do not recreate:**
+
+| Role | Issue |
+| --- | --- |
+| Umbrella | https://github.com/Entropy-wz/my-skills/issues/14 |
+| Child — orchestrator | https://github.com/Entropy-wz/my-skills/issues/15 |
+| Child — template | https://github.com/Entropy-wz/my-skills/issues/16 |
+
+Full design (Lane A): [`docs/design/2026-07-25-research-case-pipeline.md`](../2026-07-25-research-case-pipeline.md)
+
+Bodies below are the text used when filing; keep for archaeology.
 
 ---
 
-## Umbrella
+## Umbrella → #14
 
 **Title:** `feat(research): case-study pipeline on SearXNG (search → fetch → cite)`
 
@@ -24,57 +34,22 @@ Acceptance Criteria:
 - [ ] No paid search API in the default path
 
 Notes:
-Parent design: docs/design/2026-07-25-ship-gate-and-research-backlog.md
+Parent design: docs/design/2026-07-25-research-case-pipeline.md
 Depends on: searxng-search kit on main
 ```
 
 ---
 
-## Child 1 — orchestrator skill
+## Child 1 → #15
 
 **Title:** `feat(skills): research-case-card orchestrates SearXNG search + fetch`
 
-```markdown
-Why:
-Agents currently improvise multi-step search/fetch; output shape drifts across sessions.
-
-What to build:
-- skills/research-case-card (or agreed name): input topic + constraints → search → select URLs → fetch → emit case-card Markdown
-- Explicit stop: no push/PR; cite sources; rate-limit aware (reuse search cache)
-
-Acceptance Criteria:
-- [ ] Skill documents the exact tool commands and output sections
-- [ ] Runs against local SearXNG when up; clear error when down
-- [ ] Top-N fetch with continue-on-error
-
-Verification:
-- One sample topic produces a card with ≥3 cited URLs
-
-Blocked by:
-None (SearXNG kit already shipped)
-
-Notes:
-Align optional sections with competition report cards when useful.
-```
+(see design §Skill behavior)
 
 ---
 
-## Child 2 — citation list format
+## Child 2 → #16
 
 **Title:** `docs(research): citation list + case-card template`
 
-```markdown
-Why:
-Stable paste targets for Feishu / report docs.
-
-What to build:
-- Template under docs/ or skill reference: case card fields + citation rows (URL, excerpt, retrieved date)
-- Link from research-case-card skill
-
-Acceptance Criteria:
-- [ ] Template checked in
-- [ ] Skill points at the template
-
-Verification:
-- Fill template once from a real SearXNG+fetch run
-```
+(see design §Output contract)
