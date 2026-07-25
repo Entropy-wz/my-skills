@@ -14,6 +14,8 @@ try {
     Write-Host ""
     Write-Host "Health check:"
     curl.exe -sS "http://127.0.0.1:8080/search?q=test&format=json" | Select-Object -First 1
+    Write-Host ""
+    Write-Host "Note: search.ps1 caches JSON under kits/searxng-search/.cache/ (gitignored, TTL 24h)."
 }
 finally {
     Pop-Location

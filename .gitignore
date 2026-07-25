@@ -24,3 +24,6 @@ tmp/
 # SearXNG local instance (contains secret_key)
 kits/searxng-search/docker/searxng/settings.yml
 kits/searxng-search/docker/searxng/settings.yml.bak
+
+# SearXNG kit filesystem cache (query results + rate throttle)
+kits/searxng-search/.cache/
