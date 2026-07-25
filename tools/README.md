@@ -16,17 +16,19 @@ Discover and run a repo's local quality gates; emit paste-ready Verification mar
 
 | Flag | Meaning |
 | --- | --- |
-| `-Path` | Repo root to scan (no `.git` walk when set). Omit to walk up from cwd. |
+| `-Path` | Repo root **directory** to scan (no `.git` walk when set). File path → exit 1. Omit to walk up from cwd. |
 | `-DryRun` | Print planned commands; do not execute. |
-| `-Json` | Also print a one-line JSON summary after the Markdown. |
-| `-TimeoutSec` | Per-command timeout (default 900). |
+| `-Json` | Also print a one-line JSON summary **after** the Markdown (including DryRun / NO_GATES). |
+| `-TimeoutSec` | Per-command timeout (default 900); honored by `.ps1` and Bash fallback. |
 
 | Exit | Meaning |
 | --- | --- |
-| 0 | All ran gates passed |
-| 1 | At least one gate failed (or timed out) |
+| 0 | All ran gates passed (or DryRun completed) |
+| 1 | Bad `-Path`, or at least one gate failed (or timed out) |
 | 2 | Runtime missing (e.g. npm/make/bash) |
 | 4 | No gates discovered |
+
+Failure log tails are redacted for common secret patterns (`api_key=`, `Bearer`, `sk-…`, `gh*_…`) before printing.
 
 Discovery order: `scripts/gates.ps1` / `gates.sh` (sole runner if present) → `package.json` `lint`/`typecheck`/`test` → Makefile `lint`/`test`/`check` → `scripts/check-layout.ps1`.
 
