@@ -1,6 +1,10 @@
-# SearXNG settings for kits/searxng-search (MVP)
+# SearXNG settings for kits/searxng-search
 # Docs: https://docs.searxng.org/admin/settings/settings.html
 # Local copy: tools/ensure-secret.ps1 → settings.yml (gitignored)
+#
+# CN opt-in (NOT default): to try baidu etc., add the engine name under
+# keep_only AND an engines: entry with disabled: false, then compose restart.
+# Upstream CAPTCHA/429 risk — see kit README rate-limit playbook.
 
 use_default_settings:
   engines:
@@ -10,6 +14,7 @@ use_default_settings:
       - brave
       - wikipedia
       - wikidata
+
 
 general:
   instance_name: "my-toolkit searxng"

@@ -72,6 +72,8 @@ bash scripts/install.sh --copy
 ./scripts/smoke-install.ps1   # install.sh set -e / kit tools / wipe guards
 ```
 
+CI（GitHub Actions）：`windows-latest` 上跑同一套 `check-layout.ps1`（内嵌 smoke-install）。见 [`.github/workflows/smoke.yml`](.github/workflows/smoke.yml)。
+
 ## 新建 skill
 
 1. 复制 `skills/_template` → `skills/<name>`

@@ -1,0 +1,25 @@
+# Single gate: check-layout.ps1 already nests smoke-install.ps1.
+# No Docker / SearXNG in this workflow.
+name: smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  layout-and-install:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check layout (includes smoke-install)
+        shell: pwsh
+        env:
+          # Isolate install target from the runner profile
+          HOME: ${{ runner.temp }}/home
+          USERPROFILE: ${{ runner.temp }}/home
+        run: |
+          New-Item -ItemType Directory -Force -Path $env:HOME | Out-Null
+          ./scripts/check-layout.ps1
