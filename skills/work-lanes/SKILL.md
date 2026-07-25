@@ -154,6 +154,9 @@ and language conventions; the commands below are the mechanics.
 
 ## Gate checklist (must pass before any Lane C push/PR "done" claim)
 
+**Prefer `/ship-gate` first** (runs `tools/run-gates` + merge-code-review and produces Verification).
+If ship-gate is unavailable, fall back to the manual steps below.
+
 1. **Discover the gates the repo defines** — check `package.json` scripts, CI workflows under
    `.github/workflows/`, `Makefile`, and any process docs. Run all of them: lint, typecheck,
    unit, integration, and any schema/migration checks.
