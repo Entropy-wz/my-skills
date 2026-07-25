@@ -15,6 +15,8 @@
 │   ├── commit-message/
 │   ├── hunk-walkthrough/
 │   ├── merge-code-review/
+│   ├── research-case-card/
+│   ├── ship-gate/
 │   └── work-lanes/
 ├── kits/                  # 多部件能力包（skill + tools + docker + …）
 │   ├── README.md          # kit 约定
