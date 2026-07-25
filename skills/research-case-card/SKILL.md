@@ -1,7 +1,6 @@
 ---
 name: research-case-card
-description: Build paste-ready enterprise case cards and a citation list from a research topic via local SearXNG search+fetch only (no paid Search API). Use for competition/course case cards, 高金-style Feishu paste blocks, and CN/EN case study lookup. Trigger phrases — "research-case-card", "/research-case-card", "案例卡", "企业案例检索", "高金案例", "搜案例并做成卡".
-disable-model-invocation: true
+description: Build paste-ready enterprise case cards and a citation list from a research topic via local SearXNG search+fetch only. Never use paid Search APIs (Brave/Tavily/SerpAPI). Use for competition/course case cards, 高金-style Feishu paste blocks, and CN/EN case study lookup. Trigger phrases — "research-case-card", "/research-case-card", "案例卡", "企业案例检索", "高金案例", "搜案例并做成卡".
 ---
 
 # Research Case Card
@@ -9,20 +8,22 @@ disable-model-invocation: true
 Orchestrates **local** `searxng-search` (search → fetch → cite) into Feishu-friendly **企业案例卡** + **引用清单**.  
 Does **not** push, open PRs, or call paid Brave/Tavily/SerpAPI.
 
-Design: [`docs/design/2026-07-25-research-case-pipeline.md`](../../docs/design/2026-07-25-research-case-pipeline.md)  
-Issues: umbrella [#14](https://github.com/Entropy-wz/my-skills/issues/14), skill [#15](https://github.com/Entropy-wz/my-skills/issues/15), templates [#16](https://github.com/Entropy-wz/my-skills/issues/16)
+Issues: umbrella [#14](https://github.com/Entropy-wz/my-skills/issues/14), skill [#15](https://github.com/Entropy-wz/my-skills/issues/15), templates [#16](https://github.com/Entropy-wz/my-skills/issues/16).  
+More detail: [reference.md](reference.md).
 
-## Templates (required)
+## Templates (required — skill-local)
 
-From the my-skills checkout (or copy paths into the project):
+Resolve paths **from this skill directory** (works after install into `~/.cursor/skills/research-case-card/`):
 
 | File | Role |
 | --- | --- |
-| [`docs/templates/enterprise-case-card.md`](../../docs/templates/enterprise-case-card.md) | Per-card shape |
-| [`docs/templates/citation-list.md`](../../docs/templates/citation-list.md) | Citation appendix |
-| [`docs/examples/enterprise-case-card-sample.md`](../../docs/examples/enterprise-case-card-sample.md) | Shape-only sample |
+| [`templates/enterprise-case-card.md`](templates/enterprise-case-card.md) | Per-card shape |
+| [`templates/citation-list.md`](templates/citation-list.md) | Citation **paste block only** |
+| [`examples/enterprise-case-card-sample.md`](examples/enterprise-case-card-sample.md) | Shape-only sample |
 
-Emit output that matches those templates (headings + bullets; avoid fragile tables).
+If a link fails, ask for `MY_SKILLS_ROOT` and read the same files under `skills/research-case-card/` in the checkout — do **not** invent a card shape.
+
+Emit headings + bullets; avoid fragile tables in user-facing paste.
 
 ## When to use
 
@@ -34,7 +35,7 @@ Emit output that matches those templates (headings + bullets; avoid fragile tabl
 
 - Pure coding / local-repo questions → no web
 - User asks to ship/push → `work-lanes`
-- User demands paid search quality / Brave-only features → say so; do not silently switch APIs
+- User demands paid search → refuse paid APIs; offer to wait for SearXNG / change query only
 
 ## Prerequisites
 
@@ -59,31 +60,33 @@ Prefer, in order:
 ## Inputs (ask if missing)
 
 1. **Topic / direction** (e.g. `数字金融 × 供应链`)
-2. **Language** — default `zh-CN` for CN reports; use `en` when needed
+2. **Language** — default `zh-CN` for CN reports; use `en` when needed (pass through to `-Language`)
 3. **Card count** — default 3, max 5 per run
-4. Optional must-include keywords / exclude domains
+4. Optional must-include keywords / exclude domains — apply when ranking hits
 
 ## Flow
 
 ### 1. Confirm inputs
 
-Restate topic, N, language. Do not start Docker unless the user asks.
+Restate topic, N, language (`<lang>`). Do not start Docker unless the user asks.
 
 ### 2. Search (1–3 queries)
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File <searxng>/tools/search.ps1 -Query "<q>" -Language zh-CN -Count 8
+powershell -NoProfile -ExecutionPolicy Bypass -File <searxng>/tools/search.ps1 -Query "<q>" -Language <lang> -Count 8
 ```
 
-- Broad query, then refined (enterprise names, 「案例」「白皮书」「供应链」 etc.)
+Replace `<lang>` with the confirmed value (`zh-CN` or `en`), never hardcode against the user's choice.
+
+- Broad query, then refined (enterprise names, 「案例」「白皮书」, must-include keywords)
 - Prefer `cache=hit` on repeat; use `-Refresh` only for breaking news
-- If exit **2** (unreachable): tell user to run `tools/up.ps1`; **STOP** — no Brave fallback
+- If exit **2** (unreachable): tell user to run `tools/up.ps1`; **STOP**. **Never** fall back to Brave/Tavily/SerpAPI or any paid Search API.
 - Paste/search footer **Unresponsive engines** when results are thin
 
 ### 3. Rank hits
 
 Prefer: official site / major media / regulator / company IR > random blogs.  
-Drop obvious junk; note weak evidence early.
+Drop exclude-domain matches and obvious junk; note weak evidence early.
 
 ### 4. Fetch bodies
 
@@ -96,9 +99,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File <searxng>/tools/fetch.ps1 -U
 
 ### 5. Emit cards + citations
 
-- Fill **N** blocks from `enterprise-case-card.md`
-- Append citation list from `citation-list.md` (`retrieved_at` labeled with timezone)
+- Fill **N** card blocks from `templates/enterprise-case-card.md` (card section only; batch wrapper optional)
+- Append **only** the `## 引用清单` paste block from `templates/citation-list.md` — do **not** paste Field rules or other author notes
+- `retrieved_at` labeled with timezone
 - Set 可分析性 stars honestly; never invent metrics
+- If you cannot honestly produce ≥3 cited URLs total, say so (shortfall) and emit fewer cards rather than fabricating sources
 
 ### 6. STOP
 
@@ -109,18 +114,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File <searxng>/tools/fetch.ps1 -U
 ## Progress checklist
 
 ```
-- [ ] Inputs confirmed (topic, lang, N)
+- [ ] Inputs confirmed (topic, lang, N; keywords/excludes if any)
+- [ ] Skill-local templates readable
 - [ ] searxng tools resolved
-- [ ] Search run (exit != 2); unresponsive engines noted if thin
+- [ ] Search run with -Language <lang>; STOP on exit 2 (no paid API)
 - [ ] URLs ranked; fetch completed (continue-on-error)
 - [ ] N case cards emitted per template
-- [ ] Citation list emitted
+- [ ] Citation paste block only emitted
 - [ ] Stopped — no remote actions
 ```
 
 ## Guardrails
 
-- No paid Search API by default
+- **Never** use paid Search APIs (Brave / Tavily / SerpAPI / etc.), including after SearXNG failure
 - No silent Docker start
 - No full report writer — **cards + citations only**
 - No fabricated excerpts or URLs
@@ -128,6 +134,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File <searxng>/tools/fetch.ps1 -U
 
 ## Example
 
-User: `/research-case-card 数字金融 供应链 做 3 张案例卡`
+User: `/research-case-card 数字金融 供应链 做 3 张案例卡`（或自然语言「做几张高金企业案例卡」）
 
-Agent: confirm → `search.ps1` (zh-CN) → select URLs → `fetch.ps1` → emit 3 cards + 引用清单 → stop.
+Agent: confirm (lang=zh-CN) → `search.ps1 -Language zh-CN` → select URLs → `fetch.ps1` → emit 3 cards + `## 引用清单` only → stop.

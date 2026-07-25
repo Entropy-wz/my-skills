@@ -1,8 +1,10 @@
 # Citation list template（引用清单）
 
-Append after case cards, or keep as a separate paste block.
+**Installed / agent-facing paste block** lives in the skill (keeps Feishu paste clean):
 
-Prefer a bullet list for Feishu (tables often break on paste).
+`skills/research-case-card/templates/citation-list.md`
+
+Mirror the paste section there. Field rules below are for authors only — **do not** ask agents to paste this table into Feishu.
 
 ---
 
@@ -25,7 +27,7 @@ Tooling: local SearXNG (`searxng-search`) + `fetch.ps1` — research / citation 
 
 ---
 
-### Field rules
+### Field rules (authors only — not for Feishu paste)
 
 | Field | Rule |
 | --- | --- |
