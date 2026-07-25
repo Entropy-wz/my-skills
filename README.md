@@ -70,7 +70,11 @@ bash scripts/install.sh --copy
 ```powershell
 ./scripts/check-layout.ps1    # layout + discovery; also runs smoke-install
 ./scripts/smoke-install.ps1   # install.sh set -e / kit tools / wipe guards
+./scripts/test-run-gates.ps1  # DryRun discovery + empty-path exit 4
+./tools/run-gates.ps1         # discover + run gates (this repo: check-layout)
 ```
+
+出货前（任意仓库）：Cursor skill `/ship-gate`，或直接跑 `tools/run-gates.ps1`（目标仓内有副本，或设置 `MY_SKILLS_ROOT` 指向本仓库）。见 [`tools/README.md`](tools/README.md)。
 
 CI（GitHub Actions）：`windows-latest` 上跑同一套 `check-layout.ps1`（内嵌 smoke-install）。见 [`.github/workflows/smoke.yml`](.github/workflows/smoke.yml)。
 
