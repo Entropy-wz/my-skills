@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Regression smoke for install.sh / install.ps1 (review findings).
 #>
@@ -62,7 +62,7 @@ try {
         }
     }
     else {
-        Write-Host "[skip] bash not available — install.sh runtime smoke skipped"
+        Write-Host "[skip] bash not available - install.sh runtime smoke skipped"
     }
 
     # 3) Kit install must expose tools/ next to SKILL.md

@@ -87,7 +87,10 @@ $smoke = Join-Path $PSScriptRoot "smoke-install.ps1"
 if (Test-Path $smoke) {
     Write-Host ""
     Write-Host "---- smoke-install ----"
-    & powershell -ExecutionPolicy Bypass -File $smoke
+    # Prefer current host (pwsh on GHA); fall back to Windows PowerShell 5.1.
+    $smokeHost = Get-Command pwsh -ErrorAction SilentlyContinue
+    if (-not $smokeHost) { $smokeHost = Get-Command powershell }
+    & $smokeHost.Source -NoProfile -ExecutionPolicy Bypass -File $smoke
     if ($LASTEXITCODE -ne 0) {
         $failed = $true
     }
