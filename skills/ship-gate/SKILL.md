@@ -29,16 +29,22 @@ confirm repo -> run gates -> paste Verification -> review -> (optional hunk) -> 
 - User asked only for review without gates → `merge-code-review` alone.
 - User wants to push / open PR now → `work-lanes` Lane C (after ship-gate if gates not yet run).
 
-## Resolve `run-gates.ps1`
+## Resolve `run-gates` runner
 
 Find the gate runner in this order — do not guess silently:
 
 1. `<target-repo>/tools/run-gates.ps1` if present (vendored or copied).
-2. `$env:MY_SKILLS_ROOT/tools/run-gates.ps1` if the env var is set.
+2. `$env:MY_SKILLS_ROOT/tools/run-gates.ps1` (or `MY_SKILLS_ROOT/tools/run-gates.sh`) if set.
 3. Ask the user for their my-skills checkout path; stop if neither exists.
 
-On macOS/Linux you may call `tools/run-gates.sh` when PowerShell is unavailable; it
-delegates to the `.ps1` when `pwsh` or `powershell.exe` is on PATH.
+**Always call the runner from the resolved absolute directory** (sibling of the file you found).
+
+| Platform | Command |
+| --- | --- |
+| Windows / when PowerShell exists | `powershell -NoProfile -ExecutionPolicy Bypass -File <resolved>/run-gates.ps1 -Path <repo>` |
+| Unix, no PowerShell | `<resolved>/run-gates.sh -Path <repo>` where `<resolved>` is the same `tools/` dir as the `.ps1` you found (usually `$MY_SKILLS_ROOT/tools`) |
+
+Do **not** invent a relative `tools/run-gates.sh` under the target repo unless that file actually exists there.
 
 ## Flow
 

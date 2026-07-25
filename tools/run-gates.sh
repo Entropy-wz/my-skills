@@ -48,8 +48,12 @@ done
 
 resolve_repo() {
     if [ -n "${PATH_ARG}" ]; then
+        if [ ! -e "${PATH_ARG}" ]; then
+            echo "ERROR: Path not found: ${PATH_ARG}" >&2
+            exit 1
+        fi
         if [ ! -d "${PATH_ARG}" ]; then
-            echo "Path not found: ${PATH_ARG}" >&2
+            echo "ERROR: -Path must be a directory, got a file: ${PATH_ARG}" >&2
             exit 1
         fi
         cd "${PATH_ARG}" && pwd
@@ -71,9 +75,42 @@ resolve_repo() {
     done
 }
 
+protect_log() {
+    # Best-effort redaction (mirrors run-gates.ps1 Protect-LogText).
+    sed -E \
+        -e 's/(api[_-]?key|token|password|secret|authorization)[[:space:]]*[=:][[:space:]]*[^[:space:]]+/\1=***/Ig' \
+        -e 's/Bearer[[:space:]]+[^[:space:]]+/Bearer ***/Ig' \
+        -e 's/\bsk-[A-Za-z0-9]{10,}/sk-***/g' \
+        -e 's/\bgh[pousr]_[A-Za-z0-9]{20,}/gh*_***/g'
+}
+
+emit_json() {
+    local summary="$1"
+    # Minimal JSON (no jq required). commands built from RESULTS.
+    local cmds="["
+    local first=1
+    local r cmd status secs ec
+    for r in "${RESULTS[@]+"${RESULTS[@]}"}"; do
+        [ -z "${r}" ] && continue
+        IFS='|' read -r cmd status secs ec <<< "${r}"
+        if [ "${first}" -eq 0 ]; then cmds="${cmds},"; fi
+        first=0
+        if [ -z "${ec}" ] || [ "${ec}" = "null" ]; then
+            cmds="${cmds}{\"cmd\":\"${cmd}\",\"status\":\"${status}\",\"seconds\":${secs},\"exit\":null}"
+        else
+            cmds="${cmds}{\"cmd\":\"${cmd}\",\"status\":\"${status}\",\"seconds\":${secs},\"exit\":${ec}}"
+        fi
+    done
+    cmds="${cmds}]"
+    printf '{"repo":"%s","when":"%s","commands":%s,"summary":"%s"}\n' \
+        "${REPO}" "${WHEN}" "${cmds}" "${summary}"
+}
+
 REPO="$(resolve_repo)"
 WHEN="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 GATES=()
+RESULTS=()
+LOGS=()
 
 if [ -f "${REPO}/scripts/gates.sh" ]; then
     GATES=("bash scripts/gates.sh")
@@ -83,7 +120,8 @@ elif [ -f "${REPO}/scripts/gates.ps1" ]; then
 else
     if [ -f "${REPO}/package.json" ]; then
         for n in lint typecheck test; do
-            if grep -q "\"${n}\"" "${REPO}/package.json" 2>/dev/null; then
+            if grep -qE "\"scripts\"[^{]*\{[^}]*\"${n}\"" "${REPO}/package.json" 2>/dev/null \
+                || grep -q "\"${n}\"" "${REPO}/package.json" 2>/dev/null; then
                 GATES+=("npm run ${n}")
             fi
         done
@@ -106,6 +144,10 @@ if [ ${#GATES[@]} -eq 0 ]; then
     echo "- env: $(uname -s) | repo: ${REPO} | when: ${WHEN}"
     echo "- ran: (none)"
     echo "- summary: NO GATES (exit 4)"
+    if [ "${JSON}" -eq 1 ]; then
+        RESULTS=()
+        emit_json "NO_GATES"
+    fi
     exit 4
 fi
 
@@ -115,33 +157,66 @@ if [ "${DRY_RUN}" -eq 1 ]; then
     echo "- ran:"
     for g in "${GATES[@]}"; do
         echo "  - \`${g}\` -> (dry-run)"
+        RESULTS+=("${g}|DRY_RUN|0|null")
     done
     echo "- summary: DRY-RUN (${#GATES[@]} planned)"
+    if [ "${JSON}" -eq 1 ]; then
+        emit_json "DRY_RUN"
+    fi
     exit 0
 fi
 
 ANY_FAIL=0
 ANY_MISSING=0
-RESULTS=()
 
 run_gate() {
     local display="$1"
     shift
-    local start end secs exit_code
+    local start end secs exit_code logfile pid elapsed
     start=$(date +%s)
-    local log
-    log="$(cd "${REPO}" && "$@" 2>&1)" || true
+    logfile="$(mktemp "${TMPDIR:-/tmp}/rg.XXXXXX")"
+
+    (
+        cd "${REPO}" || exit 127
+        "$@" >"${logfile}" 2>&1
+    ) &
+    pid=$!
+    elapsed=0
+    while kill -0 "${pid}" 2>/dev/null; do
+        if [ "${elapsed}" -ge "${TIMEOUT_SEC}" ]; then
+            kill "${pid}" 2>/dev/null || true
+            wait "${pid}" 2>/dev/null || true
+            end=$(date +%s)
+            secs=$((end - start))
+            ANY_FAIL=1
+            RESULTS+=("${display}|FAIL|${secs}|1")
+            LOGS+=("TIMEOUT after ${TIMEOUT_SEC}s")
+            rm -f "${logfile}"
+            return
+        fi
+        sleep 1
+        elapsed=$((elapsed + 1))
+    done
+
+    wait "${pid}"
     exit_code=$?
     end=$(date +%s)
     secs=$((end - start))
+    local log
+    log="$(cat "${logfile}" 2>/dev/null || true)"
+    rm -f "${logfile}"
+
     if [ "${exit_code}" -eq 127 ]; then
         ANY_MISSING=1
         RESULTS+=("${display}|MISSING_RUNTIME|${secs}|2")
+        LOGS+=("${log}")
     elif [ "${exit_code}" -ne 0 ]; then
         ANY_FAIL=1
         RESULTS+=("${display}|FAIL|${secs}|${exit_code}")
+        LOGS+=("${log}")
     else
         RESULTS+=("${display}|PASS|${secs}|0")
+        LOGS+=("")
     fi
 }
 
@@ -163,10 +238,31 @@ done
 
 if [ "${ANY_MISSING}" -eq 1 ]; then
     echo "- summary: MISSING_RUNTIME (${#RESULTS[@]} ran)"
-    exit 2
 elif [ "${ANY_FAIL}" -eq 1 ]; then
     echo "- summary: FAIL (${#RESULTS[@]} ran)"
-    exit 1
+else
+    echo "- summary: PASS (${#RESULTS[@]} ran)"
 fi
-echo "- summary: PASS (${#RESULTS[@]} ran)"
+
+idx=0
+for r in "${RESULTS[@]}"; do
+    IFS='|' read -r cmd status secs ec <<< "${r}"
+    if [ "${status}" = "FAIL" ] || [ "${status}" = "MISSING_RUNTIME" ]; then
+        echo ""
+        echo "### Log tail: ${cmd}"
+        printf '%s\n' "${LOGS[$idx]}" | protect_log | tail -n 30
+    fi
+    idx=$((idx + 1))
+done
+
+if [ "${JSON}" -eq 1 ]; then
+    if [ "${ANY_MISSING}" -eq 1 ]; then emit_json "MISSING_RUNTIME"
+    elif [ "${ANY_FAIL}" -eq 1 ]; then emit_json "FAIL"
+    else emit_json "PASS"
+    fi
+fi
+
+if [ "${ANY_MISSING}" -eq 1 ]; then exit 2; fi
+if [ "${ANY_FAIL}" -eq 1 ]; then exit 1; fi
 exit 0
+

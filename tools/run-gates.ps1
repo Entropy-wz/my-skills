@@ -11,7 +11,15 @@ $ErrorActionPreference = "Stop"
 function Resolve-RepoRoot([string]$Start) {
     if ($Start) {
         # Explicit path: use it as the repo root directly (no upward walk).
-        if (-not (Test-Path -LiteralPath $Start)) { throw "Path not found: $Start" }
+        if (-not (Test-Path -LiteralPath $Start)) {
+            Write-Host ("ERROR: Path not found: {0}" -f $Start) -ForegroundColor Red
+            exit 1
+        }
+        $item = Get-Item -LiteralPath $Start
+        if (-not $item.PSIsContainer) {
+            Write-Host ("ERROR: -Path must be a directory, got a file: {0}" -f $Start) -ForegroundColor Red
+            exit 1
+        }
         return (Resolve-Path -LiteralPath $Start).Path
     }
     # No path: walk up from cwd to the nearest .git root, else cwd.
@@ -50,8 +58,6 @@ function Test-MakeTarget([string]$Repo, [string]$Target) {
 }
 
 function Find-GateCommands([string]$Repo) {
-    # Build every candidate into one list; return .ToArray() (no unary comma).
-    # An empty list must yield a 0-length array so the caller's exit-4 path fires.
     $list = New-Object System.Collections.Generic.List[object]
 
     $gatesPs1 = Join-Path $Repo "scripts\gates.ps1"
@@ -80,11 +86,30 @@ function Find-GateCommands([string]$Repo) {
     return $list.ToArray()
 }
 
+function Protect-LogText([string]$Text) {
+    if ([string]::IsNullOrEmpty($Text)) { return $Text }
+    $t = $Text
+    $t = [regex]::Replace($t, '(?i)(api[_-]?key|token|password|secret|authorization)\s*[=:]\s*\S+', '$1=***')
+    $t = [regex]::Replace($t, '(?i)Bearer\s+\S+', 'Bearer ***')
+    $t = [regex]::Replace($t, '(?i)\bsk-[A-Za-z0-9]{10,}\b', 'sk-***')
+    $t = [regex]::Replace($t, '(?i)\bgh[pousr]_[A-Za-z0-9]{20,}\b', 'gh*_***')
+    return $t
+}
+
+function Write-JsonSummary {
+    param($Repo, $When, $Commands, [string]$Summary)
+    $payload = @{
+        repo     = $Repo
+        when     = $When
+        commands = @($Commands)
+        summary  = $Summary
+    }
+    $payload | ConvertTo-Json -Compress -Depth 5
+}
+
 function Invoke-OneGate {
     param($Gate, [string]$Repo, [int]$TimeoutSec)
 
-    # Resolve exe + args up front so MISSING_RUNTIME is reported without spawning
-    # a job. Always use the resolved .Source (npm is npm.cmd on Windows).
     $exe = $null
     $cmdArgs = @()
     switch ($Gate.Kind) {
@@ -121,10 +146,6 @@ function Invoke-OneGate {
 
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
-    # Run the command in a background job so Wait-Job can enforce a timeout.
-    # Inside the job, ErrorActionPreference=Continue keeps a native tool's stderr
-    # from raising a terminating NativeCommandError (the 5.1 stderr+Stop pitfall);
-    # 2>&1 | Out-String then captures stdout+stderr as plain text.
     $job = Start-Job -ScriptBlock {
         param($wd, $exe, $cmdArgs)
         Set-Location -LiteralPath $wd
@@ -157,7 +178,7 @@ if ($gates.Count -eq 0) {
     Write-Output "- ran: (none)"
     Write-Output "- summary: NO GATES (exit 4)"
     if ($Json) {
-        @{ repo = $repo; when = $when; commands = @(); summary = "NO_GATES" } | ConvertTo-Json -Compress
+        Write-JsonSummary -Repo $repo -When $when -Commands @() -Summary "NO_GATES"
     }
     exit 4
 }
@@ -166,9 +187,12 @@ if ($DryRun) {
     Write-Output "## Gate results (DryRun)"
     Write-Output ("- env: {0} | repo: {1} | when: {2}" -f $env:OS, $repo, $when)
     Write-Output "- ran:"
-    # Single-quoted format string so backticks stay literal (markdown code spans).
     foreach ($g in $gates) { Write-Output ('  - `{0}` -> (dry-run)' -f $g.Display) }
     Write-Output ("- summary: DRY-RUN ({0} planned)" -f $gates.Count)
+    if ($Json) {
+        $cmds = @($gates | ForEach-Object { @{ cmd = $_.Display; status = "DRY_RUN"; seconds = 0; exit = $null } })
+        Write-JsonSummary -Repo $repo -When $when -Commands $cmds -Summary "DRY_RUN"
+    }
     exit 0
 }
 
@@ -194,7 +218,8 @@ Write-Output ("- summary: {0} ({1} ran)" -f $sum, $results.Count)
 
 foreach ($r in $results) {
     if ($r.status -eq "FAIL" -or $r.status -eq "MISSING_RUNTIME") {
-        $lines = @($r.log -split '\r?\n')
+        $safe = Protect-LogText -Text ([string]$r.log)
+        $lines = @($safe -split '\r?\n')
         $tail = $lines | Select-Object -Last 30
         Write-Output ""
         Write-Output ("### Log tail: {0}" -f $r.cmd)
@@ -203,13 +228,8 @@ foreach ($r in $results) {
 }
 
 if ($Json) {
-    $payload = @{
-        repo     = $repo
-        when     = $when
-        commands = @($results | ForEach-Object { @{ cmd = $_.cmd; status = $_.status; seconds = $_.seconds; exit = $_.exit } })
-        summary  = $sum
-    }
-    $payload | ConvertTo-Json -Compress -Depth 5
+    $cmds = @($results | ForEach-Object { @{ cmd = $_.cmd; status = $_.status; seconds = $_.seconds; exit = $_.exit } })
+    Write-JsonSummary -Repo $repo -When $when -Commands $cmds -Summary $sum
 }
 
 if ($anyMissing) { exit 2 }

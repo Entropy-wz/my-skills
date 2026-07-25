@@ -61,6 +61,22 @@ finally {
     Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue
 }
 
+# C) DryRun -Json must append a JSON line with summary DRY_RUN
+$dryJson = Invoke-RunGates @("-Path", $repoRoot, "-DryRun", "-Json")
+if ($dryJson -notmatch '"summary"\s*:\s*"DRY_RUN"') {
+    Fail "DryRun -Json missing summary DRY_RUN JSON"
+}
+else { Ok "DryRun -Json emits DRY_RUN summary" }
+
+# D) -Path pointing at a file -> exit 1 (not exit 4)
+$filePath = Join-Path $repoRoot "README.md"
+$null = Invoke-RunGates @("-Path", $filePath, "-DryRun")
+if ($childExit -ne 1) {
+    Fail "expected exit 1 for file -Path, got $childExit"
+}
+else { Ok "file -Path exits 1" }
+
 if ($failed) { Write-Host "test-run-gates: FAILED"; exit 1 }
 Write-Host "test-run-gates: PASSED"
 exit 0
+
