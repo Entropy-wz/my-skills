@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Shared pre-commit (kits/git-hooks) — keep short; project may append more checks.
+set -euo pipefail
+
+# Added lines only (exclude +++ file headers). Bypass: git commit --trailer "Co-authored-by: Cursor <cursoragent@cursor.com>" --no-verify
+# (disables all hooks — prefer fixing the secret over bypassing).
+added="$(git diff --cached -U0 | grep -E '^\+[^+]' || true)"
+if [[ -z "$added" ]]; then
+  echo "git-hooks: remember Conventional Commits (feat|fix|docs|chore)(scope): …"
+  exit 0
+fi
+
+pat='(api[_-]?key|apikey)\s*[:=]\s*["'\'']?[A-Za-z0-9_\-]{16,}'
+pat="$pat"'|(apiKey)\s*[:=]\s*["'\'']?[A-Za-z0-9_\-]{16,}'
+pat="$pat"'|(BEGIN [A-Z0-9 ]*PRIVATE KEY)'
+pat="$pat"'|(AKIA[0-9A-Z]{16})'
+pat="$pat"'|(xox[baprs]-[A-Za-z0-9-]{10,})'
+pat="$pat"'|(ghp_[A-Za-z0-9]{20,})'
+pat="$pat"'|(github_pat_[A-Za-z0-9_]{20,})'
+pat="$pat"'|(sk-proj-[A-Za-z0-9_-]{10,})'
+pat="$pat"'|(sk-[A-Za-z0-9]{20,})'
+pat="$pat"'|((aws_)?secret(_access)?_key\s*[:=]\s*["'\'']?[A-Za-z0-9/+]{20,})'
+pat="$pat"'|((DB_|MYSQL_|POSTGRES_)?PASSWORD\s*[:=]\s*["'\'']?[^\s"'\'']{8,})'
+
+if printf '%s\n' "$added" | grep -Ei "$pat" >/dev/null 2>&1; then
+  echo "git-hooks pre-commit: possible secret in staged diff — commit blocked" >&2
+  echo "strip the secret or use a gitignored env file; --no-verify disables ALL hooks" >&2
+  exit 1
+fi
+
+echo "git-hooks: remember Conventional Commits (feat|fix|docs|chore)(scope): …"
+exit 0

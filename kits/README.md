@@ -22,7 +22,7 @@ Names: lowercase, hyphenated (`searxng-search`). Directories starting with `_` a
 
 | Put it in… | When |
 | --- | --- |
-| `skills/` | Pure orchestration / process skill (e.g. `build-loop`, `work-lanes`) — one folder, mostly prose |
+| `skills/` | Pure orchestration / process skill (e.g. `work-lanes`, thin `build-loop` menu) — one folder, mostly prose |
 | `kits/` | Capability with runtime pieces (infra, tools, agents) bundled with an optional skill |
 
 ## Install
@@ -33,3 +33,5 @@ Names: lowercase, hyphenated (`searxng-search`). Directories starting with `_` a
 2. every `kits/<name>/skill/SKILL.md` (skip `_…`)
 
 Kit skill install name = **kit directory name**. Do not reuse a name that already exists under `skills/`.
+
+**Asset-only kits** (no `skill/SKILL.md`) are allowed — e.g. `frontend-craft` (orchestration in `skills/frontend-craft`), `git-hooks` (install via `tools/install.*`). They are not listed by skill discovery and are not auto-installed as Cursor skills.

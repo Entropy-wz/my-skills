@@ -8,26 +8,42 @@
 
 ```
 .
-├── skills/                # 纯编排 / 流程类技能（扁平）
+├── skills/                # 纯编排 / 流程类技能（扁平；见 docs/workflows/recommended.md）
 │   ├── _template/
-│   ├── build-loop/
+│   ├── architecture-decision-records/
+│   ├── browser-verify/
+│   ├── build-loop/          # 薄入口 → workflows 菜单
+│   ├── clarify-and-plan/
 │   ├── code-review/
 │   ├── commit-message/
+│   ├── doc-verify/
+│   ├── document-delivery/
+│   ├── frontend-craft/
 │   ├── hunk-walkthrough/
+│   ├── improve-codebase-architecture/
+│   ├── incident-response/
 │   ├── merge-code-review/
+│   ├── multi-task-protocol/
+│   ├── parallel-ci-triage/
 │   ├── research-case-card/
 │   ├── ship-gate/
+│   ├── skill-fit/
+│   ├── systematic-debugging/
+│   ├── using-git-worktrees/
 │   └── work-lanes/
 ├── kits/                  # 多部件能力包（skill + tools + docker + …）
-│   ├── README.md          # kit 约定
-│   └── _template/         # 新建 kit 的模板（不安装）
+│   ├── README.md
+│   ├── _template/
+│   ├── searxng-search/
+│   ├── frontend-craft/      # 资产；编排在 skills/frontend-craft
+│   └── git-hooks/           # 本地 commit/push 护栏
 ├── tools/                 # 跨 kit 共享脚本 / CLI
 ├── agents/                # 跨 kit 小型 agent
-├── docs/                  # 设计文档 / ADR
+├── docs/                  # 设计 / workflows / ADR / templates
 ├── scripts/
-│   ├── install.ps1        # Windows：安装 skills + kit skills
-│   ├── install.sh         # macOS / Linux
-│   └── check-layout.ps1   # 布局与发现逻辑冒烟检查
+│   ├── install.ps1
+│   ├── install.sh
+│   └── check-layout.ps1
 └── README.md
 ```
 

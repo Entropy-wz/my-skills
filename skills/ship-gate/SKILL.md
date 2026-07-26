@@ -25,7 +25,7 @@ confirm repo -> run gates -> paste Verification -> review -> (optional hunk) -> 
 ## When not
 
 - Still designing or scoping → `work-lanes` Lane A.
-- Mid-implementation test loop → `build-loop` Phase 5.
+- Mid-implementation test/fix loop → follow `docs/workflows/recommended.md` (bounded retries ≤3); not ship-gate.
 - User asked only for review without gates → `merge-code-review` alone.
 - User wants to push / open PR now → `work-lanes` Lane C (after ship-gate if gates not yet run).
 
@@ -109,12 +109,14 @@ to ship, switch to **`work-lanes` Lane C** and attach this session's Verificatio
 | Skill | Role |
 | --- | --- |
 | `work-lanes` | Lanes + remote; Lane C gate checklist prefers `/ship-gate` first |
-| `build-loop` | Implement + test + review; ship-gate is the pre-ship re-gate |
+| `build-loop` | Thin workflow menu (`docs/workflows/recommended.md`); ship-gate is the pre-ship re-gate |
 | `merge-code-review` | Invoked by ship-gate; semantics unchanged |
 | `hunk-walkthrough` | Optional diff walkthrough when user says +hunk |
 | `commit-message` | Not invoked here; use in Lane C when committing |
 
 Failures: do not auto-fix gate or review findings. Re-run `/ship-gate` after fixes.
+If failures look like independent CI/job clusters, you may **ask** whether to run
+`parallel-ci-triage` — never start it automatically.
 
 ## Progress checklist
 
