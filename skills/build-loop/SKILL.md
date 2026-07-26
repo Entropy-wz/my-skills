@@ -1,143 +1,72 @@
 ---
 name: build-loop
-description: Guided build loop for a stated problem — restate the problem, propose 2+ approaches, let the user pick, implement in a mode (fix / feature / refactor / spike), auto-run tests with bounded fix retries, then hand off to review. Orchestrates other skills; never ships silently. Trigger phrases — "build-loop", "/build-loop", "propose options then build", "solve this properly", "出几个方案再实现", "让我选方案", "跑测试再 review".
+description: Thin workflow entry — load the skill-local workflows/recommended.md menu, match the user's intent to a recommended skill chain, and tell them which skills to invoke next. Does not implement, test-loop, or ship. Trigger phrases — "build-loop", "/build-loop", "recommended workflow", "what workflow", "推荐工作流", "该走哪条链", "工作流菜单".
 disable-model-invocation: true
 ---
 
-# Build Loop
+# Build Loop (workflow menu)
 
-A guided loop that turns a stated problem into reviewed, test-green code. It is an
-**orchestrator**: it sequences the phases and hands the review/ship steps off to other
-skills rather than reimplementing them.
+**Thin entry only.** This skill no longer orchestrates frame → implement → test → review.
+It opens the recommended-workflow menu and matches intent to a skill chain.
 
-Fixed sequence — never skip a phase, never silently escalate:
+## Menu file (required — skill-local)
 
-```
-frame → propose (≥2) → user picks → implement (mode) → test (bounded fix) → review → stop
-```
+Resolve **from this skill directory** (works after install into `~/.cursor/skills/build-loop/`):
 
-The loop **stops at review**. Pushing / PRs are governed by the `work-lanes` skill, not here.
+| File | Role |
+| --- | --- |
+| [`workflows/recommended.md`](workflows/recommended.md) | Authoritative workflow menu |
+
+Fallback if the link fails: ask for `MY_SKILLS_ROOT` and read
+`skills/build-loop/workflows/recommended.md` under that checkout.
+
+Human-readable mirror (may lag): `docs/workflows/recommended.md` in the my-skills repo —
+**agents must prefer the skill-local file**, same pattern as `research-case-card` templates.
+
+If the menu file is missing even after fallback, say so and stop — do not invent chains.
 
 ## When to use / when not
 
-Use when the user hands over a real problem and wants options before implementation, with
-tests and review folded in ("solve this, but show me approaches first").
+Use when the user asks which workflow to follow, says `/build-loop`, or wants a
+menu of recommended skill chains.
 
 Don't use when:
-- The change is trivial and the approach is obvious → just do it.
-- The user only wants a review of existing changes → use `merge-code-review` / `code-review`.
-- The user is deciding how work leaves the machine (push / issue / PR) → use `work-lanes`.
+- They already named a concrete skill (`/ship-gate`, `/work-lanes`, …) → invoke that skill.
+- They only want a review → `merge-code-review` / `code-review`.
+- They are deciding push / issue / PR → `work-lanes`.
 
-## Phase 1 — Frame the problem
+## Flow
 
-Restate the problem in one or two sentences and confirm you understood it. Surface:
-- The observable symptom or desired outcome (not the presumed cause).
-- Constraints (perf, compat, deadline, files that must not change).
-- How success will be verified.
-
-If the problem is a bug, reproduce it first (command + observed vs expected). A problem you
-can't state crisply is not ready to solve — ask.
-
-## Phase 2 — Propose ≥2 approaches
-
-Present **at least two** genuinely different approaches (not one plan with cosmetic variants).
-For each:
-
-```
-### Option N — <short name>
-- Approach: <how it works, 2-3 lines>
-- Touches: <files / modules>
-- Pros: <what it buys>
-- Cons / risk: <cost, failure modes>
-- Effort: <S / M / L>
-```
-
-End with a one-line **recommendation** and why. Then stop and let the user pick — do **not**
-start implementing on your own guess. Use a structured choice (AskQuestion) when available.
-
-`spike` mode may present a single quick sketch instead of full options; every other mode needs ≥2.
-
-## Phase 3 — User picks
-
-Wait for an explicit choice. If the user modifies an option or blends two, restate the final
-plan in one line and confirm before building.
-
-## Phase 4 — Implement (pick a mode)
-
-Classify the work into exactly one mode. Modes differ in proposal depth, test rigor, and
-review depth — like `work-lanes` lanes, they never escalate silently. If the work outgrows its
-mode mid-flight, name it and ask to switch.
-
-| Mode | When | Tests | Review depth | Ship |
-| --- | --- | --- | --- | --- |
-| **fix** | a bug with a repro | **write the failing repro test first**, then fix until green | `merge-code-review` (low/medium) | via `work-lanes` |
-| **feature** | new capability | tests for the new behavior; use TDD if available | `merge-code-review` (medium/high) | via `work-lanes` |
-| **refactor** | behavior-preserving change | existing tests are the safety net; add characterization tests for gaps; **must stay green throughout** | `merge-code-review`, focus on behavior-preservation | via `work-lanes` |
-| **spike** | throwaway prototype / exploration | smoke check only; full gate skipped | skip formal review; summarize learnings | **do not ship** — spike code is disposable |
-
-Implement the chosen option. If reality diverges from the approved plan (the option turns out
-unworkable), stop and re-propose rather than quietly doing something else.
-
-## Phase 5 — Test (bounded fix loop)
-
-1. **Discover the gate**: test/lint/typecheck commands from `package.json` scripts, `Makefile`,
-   CI under `.github/workflows/`, or the repo's conventions (pytest, go test, etc.).
-2. **Run** the relevant tests (scope to the change when the suite is large; run the full suite
-   before declaring done).
-3. **If red**: analyze the failure, fix, and rerun. Retry at most **3 times**. After the third
-   still-failing run, **stop** — report exactly what's failing, your best hypotheses, and ask
-   the user how to proceed. Do not loop indefinitely.
-4. **Never claim done without green evidence.** Paste the passing test output.
-
-`spike` mode runs a smoke check instead of the full gate.
-
-## Phase 6 — Review (hand off)
-
-Once tests are green, hand off to the review skill — do not hand-roll a review:
-
-- Default: invoke **`merge-code-review`** on the diff since the loop's starting point
-  (advisory, ranked bug hunt). Map effort from the mode (fix→low/medium, feature→medium/high).
-- For a neutral Standards‖Spec teaching split, use **`code-review`** instead.
-
-Surface the findings. Apply fixes only if the user asks; each applied fix re-enters Phase 5
-(tests must stay green).
-
-`spike` mode skips formal review and instead summarizes what was learned and what to keep.
-
-## Stop / handoff
-
-The loop ends here with: what was built, the passing test evidence, and the review findings.
-**Shipping is out of scope** — if the user wants to push / open issues / open a PR, switch to
-`work-lanes` (Lane C gate). Never `git push` or `gh pr create` from inside build-loop.
-
-## Progress checklist
-
-Copy and track:
-
-```
-- [ ] Phase 1: problem framed + (if bug) reproduced
-- [ ] Phase 2: ≥2 approaches presented with tradeoffs + recommendation
-- [ ] Phase 3: user picked an option
-- [ ] Phase 4: mode chosen; implemented per the approved option
-- [ ] Phase 5: tests discovered + run; green (or stopped after 3 tries and asked)
-- [ ] Phase 6: review handed to merge-code-review; findings reported
-- [ ] Stopped at review — ship handed to work-lanes if requested
-```
+1. **Load** `workflows/recommended.md` from this skill directory (full file).
+2. **Match** the user's intent to exactly one workflow row (feature, bug, multi-task,
+   docs, frontend, incident, pre-ship, architecture, …). If ambiguous, present the
+   two closest rows and ask.
+3. **Report** the chain: ordered skill names, lane notes, and any `（planned Wave N）`
+   items still unavailable.
+4. **Hand off** — tell the user (or invoke, if they ask) the **next existing** skill
+   in the chain. Skip planned items or note the interim fallback written in the menu.
+5. **Stop.** Do not implement the work inside this skill.
 
 ## Guardrails
 
-- Never skip Phase 2→3: no implementation before the user picks an approach.
-- Always ≥2 approaches except `spike`.
-- Never escalate modes silently.
-- Bounded fix retries (≤3), then stop and ask — no infinite fix loops.
-- No "done" claim without pasted green test output.
-- Never push, open PRs, or create issues — that belongs to `work-lanes`.
-- Don't reimplement review; hand off to `merge-code-review` / `code-review`.
+- **Never** re-run the old orchestrator (frame → propose → implement → test → review).
+- **Never** substitute for `clarify-and-plan`, `systematic-debugging`, `multi-task-protocol`,
+  or other skills named in the menu — only point at them.
+- **Never** `git push`, open PRs, or create issues — that belongs to `work-lanes`.
+- Respect shared discipline in the menu: bounded fix retries ≤3, evidence before "done".
+- If a chain step is `（planned）`, do not pretend the skill exists.
+
+## Boundaries vs other skills
+
+| Skill | Role |
+| --- | --- |
+| `build-loop` (this) | Menu + match + handoff only |
+| `work-lanes` | Lanes + remote outbox |
+| `ship-gate` | Pre-ship gates + merge-code-review |
+| Concrete skills in the menu | Do the real work |
 
 ## Example invocations
 
-- "/build-loop the export is dropping the last row — fix it." (→ fix)
-- "Propose a couple of approaches for adding rate limiting, then build the one I pick." (→ feature)
-- "Refactor this module, keep behavior identical, run the tests." (→ refactor)
-- "Spike a quick prototype of the new parser so we can see if it's viable." (→ spike)
-- "出两个方案给我选，然后实现、跑测试、再 review。"
+- "/build-loop I need to add rate limiting — which chain?"
+- "推荐工作流：这是个线上事故"
+- "what workflow for a merge-ready bug fix?"

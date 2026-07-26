@@ -36,6 +36,22 @@ Default is **medium**. Map the user's words: "quick"/"fast"/"just the obvious st
 - **high**: recall-biased. More angles + recall-biased verify; keep plausible rare-path bugs; add reuse/simplification/convention cleanup.
 - **ultra**: high + cross-file data-flow tracing; use only when explicitly requested (token cost).
 
+## Framework
+
+See `docs/design/2026-07-26-review-framework.md`. This skill is the **merge-readiness**
+entry. General/teaching reviews → `code-review`.
+
+### Optional Security / find-bugs axis
+
+When the user asks for security focus (or ship-gate context warrants it), add a short
+pass over the **diff only**:
+
+- Injection (SQL/command/template), XSS, authz/IDOR, secret leakage, unsafe deserialization
+- Dangerous defaults (open CORS, debug left on), path traversal on file APIs
+
+Report under Critical/Important with the same `failure_scenario` rule. Do **not** start a
+separate review skill. Skip this axis on `low` effort unless requested.
+
 ## Process
 
 ### 1. Pin the fixed point
@@ -164,3 +180,24 @@ Emit each finding with these fields:
 - "Find correctness bugs in the diff vs `v2.3.0`, skip style."
 - "Mentor-review PR #142, P1/P2 only, no nits."
 - "Ultra review origin/main...HEAD and suggest what to test."
+
+## Appendix: Receiving review feedback
+
+When the user (or you) is **acting on** review findings — from this skill, a human, or CI —
+follow this reception protocol. It does not change the advisory nature of the review itself.
+
+**Core:** verify before implementing; ask before assuming; technical correctness over
+performative agreement.
+
+1. **Read** the full feedback without reacting or patching mid-read.
+2. **Classify** each item: agree (evidence-backed) / need clarification / disagree (with
+   counter-evidence: repro, test, spec, or standard).
+3. **Ask** on anything unclear or technically questionable — do not silently "fix" a
+   misunderstanding.
+4. **Implement** only agreed items; re-run relevant tests (bounded retries ≤3 per
+   `docs/workflows/recommended.md`).
+5. **Decline** items that are wrong or out of scope with a short technical rationale —
+   never rubber-stamp to be polite.
+
+This appendix is process for the implementer side. It does **not** authorize Approve /
+Request-changes / merge.

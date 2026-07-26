@@ -1,42 +1,57 @@
 ---
 name: code-review
-description: 从正确性、安全性、可维护性角度审查代码改动。当用户请求代码审查、审阅 PR、检查代码改动或询问代码质量问题时使用。
+description: General / teaching / quick code review entry — Standards and Spec axes, prioritized feedback. Use when not doing a full merge-readiness bug-hunt (that is merge-code-review). Trigger phrases — "code-review", "/code-review", "快速审查", "教学向 review", "Standards Spec".
 disable-model-invocation: true
 ---
 
-# Code Review
+# Code Review (general entry)
 
-## 用途
+Part of the [review framework](../../docs/design/2026-07-26-review-framework.md).
 
-按统一标准审查代码，给出可执行、分优先级的反馈。
+Use this for **general, teaching, or quick** reviews. For pre-merge correctness bug-hunt
+with find→verify→cap, use **`merge-code-review`** instead.
 
-## 审查清单
+## When to use / when not
 
-- [ ] 逻辑正确，处理了边界情况（空值、越界、并发）
-- [ ] 无安全漏洞（注入、XSS、密钥硬编码、越权）
-- [ ] 错误处理完整，失败路径有明确处理
-- [ ] 命名清晰，函数职责单一、体量合理
-- [ ] 符合项目既有风格与约定
-- [ ] 测试覆盖了新增 / 修改的行为
+Use when:
 
-## 反馈格式
+- User wants a readable Standards ‖ Spec split
+- Quick checklist review without subagent machinery
+- Teaching / mentoring tone on a diff or file set
 
-按优先级标注每条反馈：
+Don't use when:
 
-- 🔴 **必须修复**：合并前需解决（bug、安全问题）
-- 🟡 **建议改进**：可提升质量，非阻塞
-- 🟢 **可选优化**：锦上添花
+- Merge-readiness / "find bugs before merge" → `merge-code-review`
+- Line-by-line hunk tour → `hunk-walkthrough`
+- Architecture deepening → `improve-codebase-architecture`
 
-每条反馈尽量给出：问题所在文件/行、原因、以及具体的修改建议或示例代码。
+## Effort
 
-## 示例
+| Mode | Behavior |
+| --- | --- |
+| **quick** | Checklist only; ≤5 findings |
+| **teaching** | Explicit Standards axis + Spec axis; explain why |
+| **default** | Balanced checklist + prioritized notes |
 
-🔴 **必须修复** — `auth/login.py:42`
-用户输入直接拼进 SQL 查询，存在注入风险。改用参数化查询：
+## Checklist
 
-```python
-cur.execute("SELECT * FROM users WHERE email = %s", (email,))
-```
+- [ ] Logic correct; edges (null, bounds, concurrency)
+- [ ] Security basics (injection, XSS, secrets, authz)
+- [ ] Error handling on failure paths
+- [ ] Naming / single responsibility / size
+- [ ] Matches project style (`AGENTS.md`, `.cursor/rules`, CONTRIBUTING)
+- [ ] Tests cover new/changed behavior (TDD axis: missing tests → lower confidence)
 
-🟡 **建议改进** — `utils/parse.py:12`
-函数一次做了解析和写库两件事，建议拆分以便单测。
+## Feedback format
+
+- 🔴 **Must fix** — bug / security before merge
+- 🟡 **Should improve** — quality, non-blocking
+- 🟢 **Optional** — polish
+
+Each item: location, why, concrete suggestion.
+
+## Handoffs
+
+- Escalating to merge-readiness → `merge-code-review`
+- Acting on feedback → merge-CR **Appendix: Receiving review feedback**
+- Shipping → `ship-gate` → `work-lanes` Lane C
