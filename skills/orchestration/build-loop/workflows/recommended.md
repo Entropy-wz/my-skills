@@ -95,7 +95,7 @@ Status legend: unmarked = skill exists today; `（planned Wave N）` = not lande
 ### Fit / garden skills in this repo
 
 1. `skill-fit` (fit checklist + gardening + scanner)  
-2. Update **this file** (`skills/build-loop/workflows/recommended.md`) if menu entries changed  
+2. Update **this file** (`skills/orchestration/build-loop/workflows/recommended.md`) if menu entries changed  
    (`docs/workflows/recommended.md` is only a stub pointer)  
 
 ### Local commit hooks (optional)

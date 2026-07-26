@@ -21,7 +21,7 @@ Resolve paths **from this skill directory** (works after install into `~/.cursor
 | [`templates/citation-list.md`](templates/citation-list.md) | Citation **paste block only** |
 | [`examples/enterprise-case-card-sample.md`](examples/enterprise-case-card-sample.md) | Shape-only sample |
 
-If a link fails, ask for `MY_SKILLS_ROOT` and read the same files under `skills/research-case-card/` in the checkout — do **not** invent a card shape.
+If a link fails, ask for `MY_SKILLS_ROOT` and read the same files under `skills/docs/research-case-card/` in the checkout — do **not** invent a card shape.
 
 Emit headings + bullets; avoid fragile tables in user-facing paste.
 

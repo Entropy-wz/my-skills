@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install skills from this toolkit into ~/.cursor/skills/.
 # Sources:
-#   1) skills/<name>/SKILL.md  (skip _*)
+#   1) skills/**/<leaf>/SKILL.md  (skip _*; install name = leaf)
 #   2) kits/<name>/skill/SKILL.md  (skip _*)
 # Default: symlink. Pass --copy to copy instead.
 #
@@ -31,23 +31,67 @@ fi
 
 mkdir -p "$DEST_DIR"
 
+# Temp files cleaned on EXIT (interrupt / set -e mid-collect).
+CLEANUP_FILES=""
+cleanup_temps() {
+  # shellcheck disable=SC2086
+  rm -f $CLEANUP_FILES
+}
+trap cleanup_temps EXIT
+
+track_temp() {
+  CLEANUP_FILES="${CLEANUP_FILES} $1"
+}
+
 # Emit name|path|kind lines (skills first, then kits).
-# path = skill dir for kind=skill; kit root for kind=kit.
-# Always ends with status 0 so set -e + command substitution cannot abort
-# when the last scanned directory simply lacks SKILL.md.
+# Skills: exactly skills/<category>/<leaf>/SKILL.md (ADR-001); install name = leaf.
+# Skip any path segment starting with _. path = skill dir for kind=skill; kit root for kit.
+# find failures and invalid depths abort (exit 1). Ends with return 0 on success.
 collect_sources() {
-  local dir name skill_md skill_dir
+  local dir name skill_md skill_dir rel find_out find_err sort_out nslash
 
   if [ -d "$SKILLS_DIR" ]; then
-    for dir in "$SKILLS_DIR"/*/; do
-      [ -d "$dir" ] || continue
-      name="$(basename "$dir")"
-      case "$name" in _*) continue ;; esac
-      skill_md="${dir}SKILL.md"
-      if [ -f "$skill_md" ]; then
-        printf '%s|%s|skill\n' "$name" "${dir%/}"
+    find_out="$(mktemp)"
+    find_err="$(mktemp)"
+    track_temp "$find_out"
+    track_temp "$find_err"
+    # Do not bury find in $(…) / heredoc — set -e must see failures.
+    if ! find "$SKILLS_DIR" -type f -name SKILL.md >"$find_out" 2>"$find_err"; then
+      echo "错误: find skills/**/SKILL.md 失败:" >&2
+      cat "$find_err" >&2
+      exit 1
+    fi
+    if [ -s "$find_err" ]; then
+      # Some find builds write warnings to stderr while exiting 0
+      cat "$find_err" >&2
+    fi
+
+    sort_out="$(mktemp)"
+    track_temp "$sort_out"
+    sort "$find_out" >"$sort_out"
+    while IFS= read -r skill_md; do
+      [ -n "$skill_md" ] || continue
+      rel="${skill_md#"$SKILLS_DIR"/}"
+      case "$rel" in
+        _*|*/_*) continue ;;
+      esac
+      # Exactly category/leaf/SKILL.md (two slashes / three path components)
+      nslash=$(printf '%s' "$rel" | awk -F/ '{print NF-1}')
+      if [ "$nslash" -ne 2 ]; then
+        echo "错误: 非法 skill 路径 '$rel'（需要 skills/<category>/<leaf>/SKILL.md）" >&2
+        exit 1
       fi
-    done
+      case "$rel" in
+        */*/SKILL.md) ;;
+        *)
+          echo "错误: 非法 skill 路径 '$rel'（需要 skills/<category>/<leaf>/SKILL.md）" >&2
+          exit 1
+          ;;
+      esac
+      skill_dir="$(dirname "$skill_md")"
+      name="$(basename "$skill_dir")"
+      printf '%s|%s|skill\n' "$name" "$skill_dir"
+    done <"$sort_out"
   fi
 
   if [ -d "$KITS_DIR" ]; then
@@ -66,11 +110,14 @@ collect_sources() {
   return 0
 }
 
+# Case-insensitive name clash (Windows dest is case-insensitive).
 name_seen() {
   local needle="$1"
-  local n
+  local needle_lc n n_lc
+  needle_lc=$(printf '%s' "$needle" | tr '[:upper:]' '[:lower:]')
   for n in $SEEN_LIST; do
-    if [ "$n" = "$needle" ]; then
+    n_lc=$(printf '%s' "$n" | tr '[:upper:]' '[:lower:]')
+    if [ "$n_lc" = "$needle_lc" ]; then
       return 0
     fi
   done
@@ -154,16 +201,27 @@ kit_count=0
 found_any=0
 
 SOURCE_FILE="$(mktemp)"
-trap 'rm -f "$SOURCE_FILE"' EXIT
+track_temp "$SOURCE_FILE"
 collect_sources >"$SOURCE_FILE"
+
+# Preflight: reject duplicate install names before any dest write (ADR-001).
+while IFS='|' read -r name path kind || [ -n "${name:-}" ]; do
+  [ -n "${name:-}" ] || continue
+  if name_seen "$name"; then
+    echo "错误: 名称冲突 ${kind}: ${name}（与已发现项重复；ADR-001 要求唯一安装名）" >&2
+    exit 1
+  fi
+  SEEN_LIST="${SEEN_LIST} ${name}"
+done <"$SOURCE_FILE"
+SEEN_LIST=""
 
 while IFS='|' read -r name path kind || [ -n "${name:-}" ]; do
   [ -n "${name:-}" ] || continue
   found_any=1
 
   if name_seen "$name"; then
-    echo "警告: 名称冲突，跳过 ${kind}: ${name}（已存在于已安装列表）" >&2
-    continue
+    echo "错误: 名称冲突 ${kind}: ${name}（与已发现项重复；ADR-001 要求唯一安装名）" >&2
+    exit 1
   fi
 
   SEEN_LIST="${SEEN_LIST} ${name}"
@@ -177,7 +235,7 @@ while IFS='|' read -r name path kind || [ -n "${name:-}" ]; do
 done <"$SOURCE_FILE"
 
 if [ "$found_any" -eq 0 ]; then
-  echo "未发现任何可安装 skill（skills/*/SKILL.md 或 kits/*/skill/SKILL.md）" >&2
+  echo "未发现任何可安装 skill（skills/**/SKILL.md 或 kits/*/skill/SKILL.md）" >&2
   exit 1
 fi
 

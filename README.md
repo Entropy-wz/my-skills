@@ -2,61 +2,104 @@
 
 个人工具库：Cursor / Claude **Skills**、可运行的 **Tools**、小型 **Agents**，以及按能力打包的 **Kits**（例如自建搜索）。
 
-由原先的纯 skills 仓库演进为混合布局（skills 保持扁平；多部件能力进 `kits/`）。
+由原先的纯 skills 仓库演进为混合布局（**仓库内按用途分类，安装仍扁平**；多部件能力进 `kits/`）。布局锁定见 [**ADR-001**](docs/adr/001-toolkit-three-layer-layout.md)。文档入口：[`docs/README.md`](docs/README.md)。
+
+## 架构一览
+
+一眼看分层与分布（设计说明见 [`docs/design/2026-07-26-readme-architecture-mindmap.md`](docs/design/2026-07-26-readme-architecture-mindmap.md)）。日常该调哪条链：[`skills/orchestration/build-loop/workflows/recommended.md`](skills/orchestration/build-loop/workflows/recommended.md)。
+
+```mermaid
+flowchart TB
+  ROOT((my-skills))
+
+  ROOT --- LAY
+  ROOT --- FLOW
+  ROOT --- SK
+  ROOT --- KT
+
+  subgraph LAY["仓库分层"]
+    direction LR
+    L1[skills]
+    L2[kits]
+    L3[tools]
+    L4[docs]
+    L5[scripts]
+  end
+
+  subgraph FLOW["出站主链"]
+    direction LR
+    F1[clarify] --> F2[lanes A/B/C] --> F3[review] --> F4[ship-gate]
+  end
+
+  subgraph SK["Skills 云"]
+    direction TB
+    S1["编排: build-loop / multi-task / worktrees"]
+    S2["设计: clarify-and-plan / ADR / improve-arch"]
+    S3["质量: debugging / incident / skill-fit"]
+    S4["审查: merge-CR / code-review / hunk / commit"]
+    S5["文档: delivery T-P-D / doc-verify / case-card"]
+    S6["前端: frontend-craft / browser-verify"]
+    S7["CI: parallel-ci-triage"]
+  end
+
+  subgraph KT["Kits 云"]
+    direction LR
+    K1[searxng]
+    K2[frontend-craft]
+    K3[git-hooks]
+  end
+```
+
+主链细看：
+
+```mermaid
+flowchart LR
+  C[clarify-and-plan] --> A[Lane A]
+  A --> B[Lane B]
+  D[debugging] --> B
+  B --> R[review]
+  R --> S[ship-gate]
+  S --> L[Lane C]
+```
+
+| 层 | 放什么 | 例子 |
+| --- | --- | --- |
+| `skills/` | 几乎只有 `SKILL.md` 的流程 | `work-lanes`, `clarify-and-plan` |
+| `kits/` | Docker / 脚本 / 钩子 + 可选 skill | `searxng-search`, `git-hooks` |
+| `tools/` | 跨 kit 共享 CLI | `run-gates` |
+| `docs/` | 设计、决议、模板、ADR | `docs/design/*`, `docs/templates/*` |
 
 ## 目录结构
 
 ```
 .
-├── skills/                # 纯编排 / 流程类技能（扁平；见 docs/workflows/recommended.md）
-│   ├── _template/
-│   ├── architecture-decision-records/
-│   ├── browser-verify/
-│   ├── build-loop/          # 薄入口 → workflows 菜单
-│   ├── clarify-and-plan/
-│   ├── code-review/
-│   ├── commit-message/
-│   ├── doc-verify/
-│   ├── document-delivery/
-│   ├── frontend-craft/
-│   ├── hunk-walkthrough/
-│   ├── improve-codebase-architecture/
-│   ├── incident-response/
-│   ├── merge-code-review/
-│   ├── multi-task-protocol/
-│   ├── parallel-ci-triage/
-│   ├── research-case-card/
-│   ├── ship-gate/
-│   ├── skill-fit/
-│   ├── systematic-debugging/
-│   ├── using-git-worktrees/
-│   └── work-lanes/
-├── kits/                  # 多部件能力包（skill + tools + docker + …）
+├── skills/                      # 流程技能：仓库内分类，安装名 = 叶子目录
 │   ├── README.md
 │   ├── _template/
+│   ├── orchestration/           # work-lanes, build-loop, ship-gate, …
+│   ├── design/                  # clarify-and-plan, ADR, improve-arch
+│   ├── quality/                 # debugging, incident, skill-fit
+│   ├── review/                  # merge-CR, code-review, hunk, commit
+│   ├── docs/                    # delivery, doc-verify, case-card
+│   ├── frontend/                # frontend-craft, browser-verify
+│   └── ci/                      # parallel-ci-triage
+├── kits/                        # 可运行多部件（资产；可选 skill/）
+│   ├── README.md                # 边界：编排在 skills/，禁止同名双 SKILL
+│   ├── _template/
 │   ├── searxng-search/
-│   ├── frontend-craft/      # 资产；编排在 skills/frontend-craft
-│   └── git-hooks/           # 本地 commit/push 护栏
-├── tools/                 # 跨 kit 共享脚本 / CLI
-├── agents/                # 跨 kit 小型 agent
-├── docs/                  # 设计 / workflows / ADR / templates
+│   ├── frontend-craft/          # 资产；编排在 skills/frontend/frontend-craft
+│   └── git-hooks/
+├── tools/                       # 跨 kit 共享 CLI（run-gates 等）
+├── agents/
+├── docs/                        # 从 docs/README「从这里读」；ADR 在 docs/adr/
 ├── scripts/
-│   ├── install.ps1
-│   ├── install.sh
-│   └── check-layout.ps1
+│   ├── install.ps1 / install.sh
+│   ├── check-layout.ps1         # 发现 + 叶子唯一 + 悬空路径 + scan-skills
+│   └── scan-skills.ps1
 └── README.md
 ```
 
-### 放哪里？
-
-| 放这里 | 什么时候 |
-| --- | --- |
-| `skills/` | 几乎只有 `SKILL.md` 的流程/编排技能 |
-| `kits/<name>/` | 需要 docker、本地工具、小 agent 等与 skill 绑在一起 |
-| `tools/` / `agents/` | 被多个 kit 复用的共享件 |
-| `docs/` | 设计与决策（Lane A 文档） |
-
-详见 [`kits/README.md`](kits/README.md)。
+更细约定：[`skills/README.md`](skills/README.md)、[`kits/README.md`](kits/README.md)、[ADR-001](docs/adr/001-toolkit-three-layer-layout.md)。
 
 ## 安装到本地
 
@@ -64,7 +107,7 @@
 
 安装脚本会安装：
 
-1. `skills/<name>/SKILL.md`（跳过 `_…`）
+1. `skills/**/<leaf>/SKILL.md`（跳过 `_…`；安装名 = **叶子**目录名，扁平落到 `~/.cursor/skills/<leaf>/`）
 2. `kits/<name>/skill/SKILL.md`（跳过 `_…`；安装名为 kit 目录名）
 
 **Windows (PowerShell):**
@@ -98,8 +141,8 @@ CI（GitHub Actions）：`windows-latest` 上跑同一套 `check-layout.ps1`（�
 
 ## 新建 skill
 
-1. 复制 `skills/_template` → `skills/<name>`
-2. 编辑 `SKILL.md`
+1. 复制 `skills/_template` → `skills/<category>/<leaf>`（分类见 `skills/README.md`）
+2. 编辑 `SKILL.md`（`name` = leaf）
 3. 重新运行安装脚本
 
 ## 新建 kit

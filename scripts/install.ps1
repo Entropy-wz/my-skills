@@ -2,8 +2,8 @@
 .SYNOPSIS
     Install skills from this toolkit into ~/.cursor/skills/.
 .DESCRIPTION
-    Sources:
-      1) skills/<name>/SKILL.md  (skip _*)
+    Sources (ADR-001):
+      1) skills/**/<leaf>/SKILL.md  (skip _*; install name = leaf)
       2) kits/<name>/skill/SKILL.md  (skip _*)
     Kits install SKILL.md at the dest root and also bring tools/, docker/,
     agents/, README.md from the kit root (so -Copy still finds tools/).

@@ -1,7 +1,7 @@
 # Kit: frontend-craft
 
 Runnable assets for frontend design + UI acceptance. Orchestration lives in
-`skills/frontend-craft` (thin entry) — this kit is **not** installed as a duplicate skill
+`skills/frontend/frontend-craft` (thin entry) — this kit is **not** installed as a duplicate skill
 (no `skill/SKILL.md` here on purpose).
 
 ## Prerequisites
@@ -38,5 +38,5 @@ powershell -File kits/frontend-craft/tools/smoke-ui.ps1 -Url http://127.0.0.1:30
 ## Ownership
 
 - **Kit** = assets  
-- **Skill** `skills/frontend-craft` = orchestration  
-- **Skill** `skills/browser-verify` = browser QA steps  
+- **Skill** `skills/frontend/frontend-craft` = orchestration  
+- **Skill** `skills/frontend/browser-verify` = browser QA steps  
