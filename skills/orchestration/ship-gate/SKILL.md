@@ -26,7 +26,7 @@ confirm repo -> run gates -> paste Verification -> review -> (optional hunk) -> 
 
 - Still designing or scoping → `work-lanes` Lane A.
 - Mid-implementation test/fix loop → follow `docs/workflows/recommended.md` (bounded retries ≤3); not ship-gate.
-- User asked only for review without gates → `merge-code-review` alone.
+- User asked only for review without gates → `/ship-review` (or `merge-code-review` alone).
 - User wants to push / open PR now → `work-lanes` Lane C (after ship-gate if gates not yet run).
 
 ## Resolve `run-gates` runner

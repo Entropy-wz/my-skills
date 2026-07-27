@@ -87,6 +87,14 @@ Status legend: unmarked = skill exists today; `（planned Wave N）` = not lande
 1. `/ship-gate` (gates + `merge-code-review`)  
 2. `work-lanes` Lane C  
 
+### Outbound review script (no gates)
+
+1. `/ship-review` — merge-readiness script from `agents/ship-review` (thin skill mirror)  
+2. If gates / Verification runners are needed → switch to `/ship-gate` instead  
+3. Ship claim → `work-lanes` Lane C  
+
+
+
 ### Architecture improvement (not a merge gate)
 
 1. `improve-codebase-architecture`  
@@ -111,6 +119,7 @@ Status legend: unmarked = skill exists today; `（planned Wave N）` = not lande
 | --- | --- |
 | `work-lanes` | Outbox lanes A/B/C + remote gates |
 | `ship-gate` | Pre-ship: `run-gates` + merge-code-review |
+| `ship-review` | Outbound review script (`agents/ship-review`); handoff to ship-gate for gates |
 | `build-loop` | **Thin entry only** — opens this skill-local menu and matches a chain |
 | `clarify-and-plan` | Lane A: clarify, design, plan (hard-gate before code) |
 | `architecture-decision-records` | ADR under `docs/adr/` |

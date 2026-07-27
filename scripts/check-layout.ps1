@@ -16,6 +16,7 @@ $required = @(
     "agents\README.md",
     "docs\README.md",
     "docs\adr",
+    "docs\design\agent-workflow-fields.md",
     "scripts\install.ps1",
     "scripts\install.sh",
     "scripts\lib\SkillSources.ps1",
@@ -125,13 +126,89 @@ else {
     Write-Host "[skip] unique-name checks (discovery failed)"
 }
 
+# ADR-002: agents/<name>/ SoT must match skills/orchestration/<name>/agent/ snapshot (recursive)
+$agentsRoot = Join-Path $repoRoot "agents"
+if (Test-Path -LiteralPath $agentsRoot) {
+    $agentMirrorFailed = $false
+    $agentDirs = @(Get-ChildItem -LiteralPath $agentsRoot -Directory |
+        Where-Object {
+            $_.Name -notlike "_*" -and
+            (Test-Path -LiteralPath (Join-Path $_.FullName "AGENT.md"))
+        })
+    foreach ($ad in $agentDirs) {
+        $aname = $ad.Name
+        $mirrorSkill = Join-Path $repoRoot ("skills\orchestration\{0}\SKILL.md" -f $aname)
+        $mirrorAgentDir = Join-Path $repoRoot ("skills\orchestration\{0}\agent" -f $aname)
+        $mirrorAgentMd = Join-Path $mirrorAgentDir "AGENT.md"
+        if (-not (Test-Path -LiteralPath $mirrorSkill)) {
+            Write-Host ("[FAIL] agent '{0}' missing thin skill skills/orchestration/{0}/SKILL.md" -f $aname)
+            $agentMirrorFailed = $true
+            continue
+        }
+        $skillBody = Get-Content -LiteralPath $mirrorSkill -Raw -ErrorAction SilentlyContinue
+        if (-not $skillBody -or $skillBody -notmatch 'agent/AGENT\.md') {
+            Write-Host ("[FAIL] agent '{0}' thin SKILL.md must reference agent/AGENT.md" -f $aname)
+            $agentMirrorFailed = $true
+        }
+        if (-not (Test-Path -LiteralPath $mirrorAgentMd)) {
+            Write-Host ("[FAIL] agent '{0}' missing snapshot skills/orchestration/{0}/agent/AGENT.md" -f $aname)
+            $agentMirrorFailed = $true
+            continue
+        }
+        if (-not (Test-Path -LiteralPath $mirrorAgentDir)) {
+            Write-Host ("[FAIL] agent '{0}' missing snapshot dir skills/orchestration/{0}/agent/" -f $aname)
+            $agentMirrorFailed = $true
+            continue
+        }
+        $srcFiles = @(Get-ChildItem -LiteralPath $ad.FullName -Recurse -File)
+        foreach ($sf in $srcFiles) {
+            $rel = $sf.FullName.Substring($ad.FullName.Length).TrimStart('\', '/')
+            $dest = Join-Path $mirrorAgentDir $rel
+            if (-not (Test-Path -LiteralPath $dest)) {
+                Write-Host ("[FAIL] agent '{0}' snapshot missing file: {1}" -f $aname, $rel)
+                $agentMirrorFailed = $true
+                continue
+            }
+            $h1 = (Get-FileHash -LiteralPath $sf.FullName -Algorithm SHA256).Hash
+            $h2 = (Get-FileHash -LiteralPath $dest -Algorithm SHA256).Hash
+            if ($h1 -ne $h2) {
+                Write-Host ("[FAIL] agent '{0}' snapshot drift: {1}" -f $aname, $rel)
+                $agentMirrorFailed = $true
+            }
+        }
+        $snapFiles = @(Get-ChildItem -LiteralPath $mirrorAgentDir -Recurse -File)
+        foreach ($ex in $snapFiles) {
+            $rel = $ex.FullName.Substring($mirrorAgentDir.Length).TrimStart('\', '/')
+            $src = Join-Path $ad.FullName $rel
+            if (-not (Test-Path -LiteralPath $src)) {
+                Write-Host ("[FAIL] agent '{0}' snapshot has extra file: {1}" -f $aname, $rel)
+                $agentMirrorFailed = $true
+            }
+        }
+    }
+    if ($agentMirrorFailed) {
+        $failed = $true
+    }
+    elseif ($agentDirs.Count -gt 0) {
+        Write-Host ("[ok]   agent mirrors in sync ({0})" -f (($agentDirs | ForEach-Object Name) -join ", "))
+    }
+    else {
+        Write-Host "[ok]   no agents/ role packs to mirror-check"
+    }
+}
+
 # Dangling skills/… paths in active docs (not historical design archives)
+# Active surfaces only — historical docs/design/* archives use short skills/<leaf> cites on purpose
 $scanRoots = @(
     (Join-Path $repoRoot "README.md"),
     (Join-Path $repoRoot "docs\README.md"),
     (Join-Path $repoRoot "docs\workflows"),
     (Join-Path $repoRoot "docs\adr"),
     (Join-Path $repoRoot "docs\templates"),
+    (Join-Path $repoRoot "docs\design\agent-workflow-fields.md"),
+    (Join-Path $repoRoot "docs\design\2026-07-27-agents-layer-and-ship-review.md"),
+    (Join-Path $repoRoot "docs\design\plans\2026-07-27-agents-layer-and-ship-review.md"),
+    (Join-Path $repoRoot "agents"),
     (Join-Path $repoRoot "kits"),
     (Join-Path $repoRoot "skills"),
     (Join-Path $repoRoot "tools")

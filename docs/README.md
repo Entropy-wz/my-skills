@@ -1,6 +1,6 @@
 # Docs — 从这里读
 
-个人工具库文档入口。先走主链，再按需下钻；细则见 **[ADR-001](adr/001-toolkit-three-layer-layout.md)**。
+个人工具库文档入口。先走主链，再按需下钻；细则见 **[ADR-001](adr/001-toolkit-three-layer-layout.md)**、**[ADR-002](adr/002-agents-as-role-packs.md)**（agents 角色包）。
 
 ## 阅读顺序
 
@@ -20,13 +20,15 @@
 ```
 docs/
 ├── README.md     # ← 你在这里
-├── adr/          # 架构决策（ADR-001 = 三层布局）
-├── design/       # 设计与 intake（决议多；先读上面链接）
+├── adr/          # 架构决策（ADR-001 三层；ADR-002 agents）
+├── design/       # 设计 / intake；含 agent-workflow-fields 清单
 ├── workflows/    # stub → skill-local 菜单
 ├── templates/    # 粘贴模板（ADR、case card、…）
 └── examples/     # 脱敏样例
 ```
 
-Lane A（`work-lanes` design-only）产物落在这里；实现进 `skills/` / `kits/` / `tools/`。
+Lane A（`work-lanes` design-only）产物落在这里；实现进 `skills/` / `kits/` / `tools/`；角色包 SoT 在仓库根 `agents/`。  
+（`docs/agents/` 留给 work-lanes / mattpocock 类流程文档，勿放 role-pack 清单。）
 
-其他：MCP 预设 [`mcp-presets.md`](mcp-presets.md)；research case cards 见 skill `research-case-card` + `templates/enterprise-case-card.md`。
+其他：MCP 预设 [`mcp-presets.md`](mcp-presets.md)；research case cards 见 skill `research-case-card` + `templates/enterprise-case-card.md`；  
+将来 workflow 字段清单 [`design/agent-workflow-fields.md`](design/agent-workflow-fields.md)。
