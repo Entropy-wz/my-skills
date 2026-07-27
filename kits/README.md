@@ -4,6 +4,21 @@
 
 Use a kit when the capability includes any of: Docker/infra, CLI tools, small agents, shared scripts, or design notes that should travel together.
 
+## Boundary (ADR-001)
+
+| Layer | Owns | Example |
+| --- | --- | --- |
+| `skills/` | **Orchestration / process** (thin entry, menus, when-to-use) | `skills/frontend/frontend-craft` |
+| `kits/` | **Runnable assets** (scripts, docker, hooks, scaffolds) | `kits/frontend-craft` |
+| `tools/` | Shared CLI across kits | `tools/run-gates` |
+
+Rules:
+
+1. Orchestration stays in `skills/`; assets stay in `kits/`.
+2. **Asset-only kits** (no `skill/SKILL.md`) are correct when a skill already owns the entry — e.g. `frontend-craft`, `git-hooks` (hooks install via `tools/install.*`).
+3. **Forbidden: dual SKILL under the same install name** — do not ship both `skills/**/<name>/SKILL.md` and `kits/<name>/skill/SKILL.md`. Pick one install surface.
+4. Do not invent `modules/` / `plugins/` here; kits are the multi-part packing unit.
+
 ## Layout
 
 ```
@@ -11,9 +26,9 @@ kits/<kit-name>/
 ├── README.md          # what this kit is, how to run it
 ├── skill/             # optional Cursor skill (must contain SKILL.md)
 │   └── SKILL.md
-├── tools/             # optional scripts / CLIs used by the skill or agent
-├── agents/            # optional small agent prompts / runners (kit-local)
-└── docker/            # optional compose / container config
+├── tools/             # optional scripts / CLIs
+├── agents/            # optional kit-local agents
+└── docker/            # optional compose / containers
 ```
 
 Names: lowercase, hyphenated (`searxng-search`). Directories starting with `_` are templates/examples and are **not** installed.
@@ -22,16 +37,14 @@ Names: lowercase, hyphenated (`searxng-search`). Directories starting with `_` a
 
 | Put it in… | When |
 | --- | --- |
-| `skills/` | Pure orchestration / process skill (e.g. `work-lanes`, thin `build-loop` menu) — one folder, mostly prose |
-| `kits/` | Capability with runtime pieces (infra, tools, agents) bundled with an optional skill |
+| `skills/<category>/<leaf>/` | Pure orchestration / process (prose + skill-local assets) |
+| `kits/<name>/` | Runtime pieces bundled; optional `skill/` only if there is **no** same-named skill leaf |
 
 ## Install
 
 `scripts/install.ps1` / `scripts/install.sh` install:
 
-1. every `skills/<name>/SKILL.md` (skip `_…`)
-2. every `kits/<name>/skill/SKILL.md` (skip `_…`)
+1. every `skills/**/<leaf>/SKILL.md` (skip `_…`; install name = **leaf**)
+2. every `kits/<name>/skill/SKILL.md` (skip `_…`; install name = kit directory name)
 
-Kit skill install name = **kit directory name**. Do not reuse a name that already exists under `skills/`.
-
-**Asset-only kits** (no `skill/SKILL.md`) are allowed — e.g. `frontend-craft` (orchestration in `skills/frontend-craft`), `git-hooks` (install via `tools/install.*`). They are not listed by skill discovery and are not auto-installed as Cursor skills.
+Kit skill install name must not collide with any skill leaf.

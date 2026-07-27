@@ -1,6 +1,6 @@
 # Enterprise case card template（企业案例卡）
 
-**Canonical for install:** `skills/research-case-card/templates/enterprise-case-card.md` (copied with the skill).  
+**Canonical for install:** `skills/docs/research-case-card/templates/enterprise-case-card.md` (copied with the skill).  
 This `docs/templates/` path is the repo mirror.
 
 Feishu / report friendly: use headings + bullets (avoid wide Markdown tables).

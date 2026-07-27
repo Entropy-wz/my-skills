@@ -2,7 +2,7 @@
 
 **Installed / agent-facing paste block** lives in the skill (keeps Feishu paste clean):
 
-`skills/research-case-card/templates/citation-list.md`
+`skills/docs/research-case-card/templates/citation-list.md`
 
 Mirror the paste section there. Field rules below are for authors only — **do not** ask agents to paste this table into Feishu.
 

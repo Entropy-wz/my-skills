@@ -18,7 +18,7 @@ Resolve **from this skill directory** (works after install into `~/.cursor/skill
 | [`workflows/recommended.md`](workflows/recommended.md) | Authoritative workflow menu |
 
 Fallback if the link fails: ask for `MY_SKILLS_ROOT` and read
-`skills/build-loop/workflows/recommended.md` under that checkout.
+`skills/orchestration/build-loop/workflows/recommended.md` under that checkout.
 
 Human-readable mirror (may lag): `docs/workflows/recommended.md` in the my-skills repo —
 **agents must prefer the skill-local file**, same pattern as `research-case-card` templates.

@@ -74,8 +74,8 @@ try {
     else { Ok "searxng-search tools/ present after kit install" }
 
     # 4) Repo must not be wiped by reinstall
-    if (-not (Test-Path (Join-Path $repoRoot "skills\build-loop\SKILL.md"))) {
-        Fail "repo skills/build-loop wiped after install"
+    if (-not (Test-Path (Join-Path $repoRoot "skills\orchestration\build-loop\SKILL.md"))) {
+        Fail "repo skills/orchestration/build-loop wiped after install"
     }
     else {
         Ok "repo skills/ intact after install"
@@ -94,6 +94,46 @@ try {
 finally {
     if (Test-Path $fakeKit) {
         Remove-Item -Recurse -Force $fakeKit
+    }
+}
+
+# 6) Depth contract: skills-root / category-root / depth>2 SKILL.md must be rejected
+. (Join-Path $PSScriptRoot "lib\SkillSources.ps1")
+$skillsDir = Join-Path $repoRoot "skills"
+$kitsDir = Join-Path $repoRoot "kits"
+$probes = @(
+    @{ Rel = "SKILL.md"; Label = "skills-root SKILL.md" },
+    @{ Rel = "orchestration\SKILL.md"; Label = "category-root SKILL.md" },
+    @{ Rel = "orchestration\build-loop\extra\SKILL.md"; Label = "depth>2 SKILL.md" }
+)
+foreach ($p in $probes) {
+    $full = Join-Path $skillsDir $p.Rel
+    $parent = Split-Path $full -Parent
+    try {
+        New-Item -ItemType Directory -Force -Path $parent | Out-Null
+        Set-Content -Path $full -Value "---`nname: probe`n---`n"
+        try {
+            $null = Get-SkillSources -SkillsDir $skillsDir -KitsDir $kitsDir
+            Fail ("discovery accepted {0}" -f $p.Label)
+        }
+        catch {
+            $msg = "$_"
+            if ($msg -match 'require skills/<category>/<leaf>/SKILL\.md') {
+                Ok ("discovery rejects {0}" -f $p.Label)
+            }
+            else {
+                Fail ("discovery threw unexpected error for {0}: {1}" -f $p.Label, $msg)
+            }
+        }
+    }
+    finally {
+        Remove-Item -Force $full -ErrorAction SilentlyContinue
+        $extraDir = Join-Path $skillsDir "orchestration\build-loop\extra"
+        if (Test-Path $extraDir) { Remove-Item -Recurse -Force $extraDir -ErrorAction SilentlyContinue }
+        $rootProbe = Join-Path $skillsDir "SKILL.md"
+        if (Test-Path $rootProbe) { Remove-Item -Force $rootProbe -ErrorAction SilentlyContinue }
+        $catProbe = Join-Path $skillsDir "orchestration\SKILL.md"
+        if (Test-Path $catProbe) { Remove-Item -Force $catProbe -ErrorAction SilentlyContinue }
     }
 }
 

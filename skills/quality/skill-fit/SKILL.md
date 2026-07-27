@@ -1,12 +1,12 @@
 ---
 name: skill-fit
-description: Fit existing skills/kits to this repo — template alignment, handoffs, triggers, dedupe; includes skill-gardening patterns and a lightweight skill-scanner checklist. Trigger phrases — "skill-fit", "贴合仓库", "skill-gardening", "扫描 skills 安全", "skill-scanner".
+description: Fit existing skills and kits to this repo — template alignment, handoffs, triggers, dedupe; includes skill-gardening patterns and a lightweight skill-scanner checklist. Trigger phrases — "skill-fit", "贴合仓库", "skill-gardening", "扫描 skills 安全", "skill-scanner".
 disable-model-invocation: true
 ---
 
 # Skill Fit
 
-Make **existing** skills/kits fit `my-skills` conventions. Not a from-scratch "write skills
+Make **existing** skills and kits fit `my-skills` conventions. Not a from-scratch "write skills
 with TDD" course (that was upstream `writing-skills`).
 
 ## When to use / when not
@@ -22,7 +22,7 @@ Don't use for application feature work unrelated to the toolkit.
 - [ ] Handoff one-liner to `work-lanes` / `ship-gate` / workflow menu where relevant
 - [ ] Paths match repo (`docs/design/`, `docs/adr/`, `docs/workflows/recommended.md`)
 - [ ] No duplicate of another skill's job (dedupe or cross-link)
-- [ ] Listed in `skills/build-loop/workflows/recommended.md` if it is a menu entry
+- [ ] Listed in `skills/orchestration/build-loop/workflows/recommended.md` if it is a menu entry
 - [ ] `scripts/check-layout.ps1` still passes after installable changes
 - [ ] `scripts/scan-skills.ps1` clean (or findings explained)
 
@@ -31,7 +31,7 @@ Don't use for application feature work unrelated to the toolkit.
 When the user repeatedly corrects the same convention or repeats a multi-step flow:
 
 1. **Suggest a Cursor rule** (`.cursor/rules`) for stable conventions.
-2. **Draft a new skill** under `skills/<name>/` from the repeated flow (ask before writing).
+2. **Draft a new skill** under `skills/<category>/<leaf>/` from the repeated flow (ask before writing; see ADR-001).
 3. Prefer thin skills that point at kits for runnable assets.
 
 ## Skill-scanner (lightweight, runnable)
