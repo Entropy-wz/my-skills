@@ -90,16 +90,16 @@ flowchart LR
 │   ├── frontend-craft/          # 资产；编排在 skills/frontend/frontend-craft
 │   └── git-hooks/
 ├── tools/                       # 跨 kit 共享 CLI（run-gates 等）
-├── agents/
+├── agents/                      # 角色包 SoT（不安装；薄 skill 镜像，见 ADR-002）
 ├── docs/                        # 从 docs/README「从这里读」；ADR 在 docs/adr/
 ├── scripts/
 │   ├── install.ps1 / install.sh
-│   ├── check-layout.ps1         # 发现 + 叶子唯一 + 悬空路径 + scan-skills
+│   ├── check-layout.ps1         # 发现 + 叶子唯一 + 悬空路径 + scan-skills + agent 镜像
 │   └── scan-skills.ps1
 └── README.md
 ```
 
-更细约定：[`skills/README.md`](skills/README.md)、[`kits/README.md`](kits/README.md)、[ADR-001](docs/adr/001-toolkit-three-layer-layout.md)。
+更细约定：[`skills/README.md`](skills/README.md)、[`kits/README.md`](kits/README.md)、[`agents/README.md`](agents/README.md)、[ADR-001](docs/adr/001-toolkit-three-layer-layout.md)、[ADR-002](docs/adr/002-agents-as-role-packs.md)。
 
 ## 安装到本地
 
