@@ -1,0 +1,176 @@
+id: ship-review
+name: ship-review
+version: "1"
+summary: >-
+  Outbound **merge-readiness review script**: pin a fixed point, choose effort,
+  produce a
+
+  ranked review skeleton (or hand off to `/ship-gate` when gates are required).
+  Does **not**
+
+  replace `ship-gate` or `work-lanes`.
+when:
+  - User wants a pre-merge / mentor-style review before claiming ship-ready.
+  - 'Triggers: `/ship-review`, "ship-review", "出站审查", "merge review script",
+    "出货前审查剧本".'
+when_not:
+  - Need gates + Verification paste first → `/ship-gate` (or ask, then hand off).
+  - Only teaching Standards‖Spec with no rerank → `code-review`.
+  - Deciding push / PR / issues → `work-lanes` Lane C (after evidence).
+  - Still designing → `clarify-and-plan` / Lane A.
+inputs:
+  - Target repo root (cwd or explicit path).
+  - Fixed-point ref (default `origin/main`).
+  - Effort level (default medium).
+  - 'Optional: "include gates" → step 4 handoff.'
+outputs:
+  - Merge-review markdown (or clear handoff note to `/ship-gate`).
+  - Explicit stop + Lane C reminder.
+banned_actions:
+  - git push
+  - gh pr create
+  - edit
+  - gh issue create
+  - tools/run-gates
+preserve_agent_md: true
+nodes:
+  - id: step-1
+    type: step
+    label: Confirm fixed-point
+    notes: "`git rev-parse <fixed-point>` and `git rev-parse HEAD`."
+  - id: step-2
+    type: step
+    label: Build review scope (always combine commit range and dirty tree
+    notes: >-
+      1. Compute three-dot: `git diff --stat <fixed-point>...HEAD` and
+
+      `git log <fixed-point>..HEAD --oneline`.
+
+      2. Always collect working tree:
+
+      - tracked: `git diff <fixed-point>` (covers staged + unstaged vs the
+      fixed-point tip)
+
+      - names: `git status --short` (staged / unstaged / **untracked**)
+
+      - **untracked bodies:** for every `??` path in status, **Read** the file
+      (or
+
+      directory’s relevant files). Status names alone are not enough.
+
+      3. **If three-dot is non-empty:** scope = commits in that range **plus**
+      the working-tree
+
+      set from (2). Say so explicitly (“commits + dirty tree”).
+
+      4. **If three-dot is empty:**
+
+      - Do **not** stop.
+
+      - If `HEAD` **equals** `<fixed-point>` (typical local WIP on main): scope
+      = working
+
+      tree vs fixed-point from (2) only. Tell the user this is WT scope, not
+      merge-base…HEAD.
+
+      - If `HEAD` is a **strict ancestor** of `<fixed-point>` (local behind
+      remote): do **not**
+
+      treat `git diff <fixed-point>` as the primary review. Warn that the branch
+      is behind;
+
+      ask to `git fetch` / fast-forward (or name an intentional base). Until
+      caught up,
+
+      review only the dirty working tree against `HEAD` (`git diff HEAD` +
+      status + Read
+
+      untracked) — not the full “delete remote commits” two-dot vs
+      `<fixed-point>`.
+
+      - Otherwise (empty three-dot for another reason): same as WT-vs-`HEAD` +
+      status + Read
+
+      untracked; state the limitation.
+  - id: step-3
+    type: step
+    label: Confirm effort
+    notes: "`merge-code-review`)."
+  - id: step-4
+    type: step
+    label: Gates branch
+    notes: "**handoff to `/ship-gate`** and stop this pack (do not reimplement
+      `run-gates`)."
+  - id: step-5
+    type: step
+    label: Review
+    notes: >-
+      contents). Emit the report skeleton: Critical / Important / Spec gaps /
+      Verification
+
+      suggested.
+  - id: step-6
+    type: step
+    label: Stop
+    notes: before any ship claim if gates were not run.
+  - id: gate-1
+    type: gate
+    label: Gates / Verification from repo runners
+    ref: ship-gate
+  - id: skill-2
+    type: skill
+    label: Lane / remote decisions
+    ref: work-lanes
+  - id: skill-3
+    type: skill
+    label: Teaching two-axis review only
+    ref: code-review
+  - id: skill-4
+    type: skill
+    label: Diff walkthrough
+    ref: hunk-walkthrough
+edges:
+  - from: step-1
+    to: step-2
+  - from: step-2
+    to: step-3
+  - from: step-3
+    to: step-4
+  - from: step-4
+    to: step-5
+  - from: step-5
+    to: step-6
+  - from: step-6
+    to: gate-1
+    condition: handoff
+ui:
+  step-1:
+    x: 80
+    y: 80
+  step-2:
+    x: 300
+    y: 80
+  step-3:
+    x: 520
+    y: 80
+  step-4:
+    x: 740
+    y: 80
+  step-5:
+    x: 80
+    y: 200
+  step-6:
+    x: 300
+    y: 200
+  gate-1:
+    x: 520
+    y: 200
+  skill-2:
+    x: 740
+    y: 200
+  skill-3:
+    x: 80
+    y: 320
+  skill-4:
+    x: 300
+    y: 320

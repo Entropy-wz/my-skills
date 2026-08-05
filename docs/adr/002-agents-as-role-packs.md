@@ -37,14 +37,16 @@ We choose **Option A**.
 
 1. An **agent** is a reusable multi-step **role pack** under `agents/<name>/` (`AGENT.md`, optional `prompt.md`). It is **not** discovered by `install.ps1` / `install.sh`.
 2. Invocation uses a **thin skill mirror** at `skills/orchestration/<name>/SKILL.md` (install name = leaf). The skill points at a skill-local `./agent/` snapshot (e.g. `agent/AGENT.md`); it must not own a second full copy of the steps as the editorial SoT.
-3. For **copy-install** into `~/.cursor/skills/<name>/`, the thin skill directory **must** carry a synced `agent/` snapshot of the pack; CI enforces recursive equality with `agents/<name>/`. Editorial edits happen in `agents/` first, then sync.
+3. For **copy-install** into `~/.cursor/skills/<name>/`, the thin skill directory **must** carry a synced `agent/` snapshot of the pack; CI enforces recursive equality with `agents/<name>/`. Editorial edits happen in `agents/` first, then sync — except where [ADR-003](003-workflow-yaml-as-studio-sot.md) defines a studio-managed pack (`workflow.yaml` present): then YAML is the orchestration SoT and `AGENT.md` is generated.
 4. Kits must not expose `skill/SKILL.md` under the same install name as an agent mirror (ADR-001 dual-SKILL ban).
-5. Phase 2 studio generates/updates `agents/` (and syncs mirrors); it does not add an `agents` install kind.
+5. Phase 2 studio (`kits/agent-flow-studio`) generates/updates `agents/` (and syncs mirrors); it does not add an `agents` install kind.
 
 ## Consequences
 
 - Update `agents/README.md`, templates, and `check-layout` mirror contract.
 - Demo agent: `ship-review` (outbound review script; handoff to `ship-gate` when gates needed).
-- Future schema fields listed in `docs/design/agent-workflow-fields.md` (no format locked here).
-- Links: `docs/design/2026-07-27-agents-layer-and-ship-review.md`; plan `docs/design/plans/2026-07-27-agents-layer-and-ship-review.md`.
+- Studio dual-SoT and D1 (`ship-review` migrate does not overwrite hand-authored `AGENT.md`): **[ADR-003](003-workflow-yaml-as-studio-sot.md)**.
+- Field checklist / schema pointer: `docs/design/agent-workflow-fields.md`.
+- Links: `docs/design/2026-07-27-agents-layer-and-ship-review.md`; studio design
+  `docs/design/2026-07-27-agent-flow-studio.md`.
 - Accepted by maintainer 2026-07-27.

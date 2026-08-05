@@ -218,7 +218,11 @@ foreach ($root in $scanRoots) {
     if (Test-Path $root -PathType Leaf) { $mdFiles += Get-Item $root }
     elseif (Test-Path $root) {
         $mdFiles += Get-ChildItem -Path $root -Recurse -Filter *.md -File |
-            Where-Object { $_.FullName -notmatch '[\\/]_' }
+            Where-Object {
+                $_.FullName -notmatch '[\\/]_' -and
+                $_.FullName -notmatch '[\\/]node_modules[\\/]' -and
+                $_.FullName -notmatch '[\\/]dist[\\/]'
+            }
     }
 }
 $dangling = @()
