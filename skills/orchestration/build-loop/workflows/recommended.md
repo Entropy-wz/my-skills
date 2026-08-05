@@ -95,6 +95,12 @@ Status legend: unmarked = skill exists today; `（planned Wave N）` = not lande
 
 
 
+### Role-pack graph editor (local studio)
+
+1. `/agent-flow-studio` — launch `kits/agent-flow-studio` (Vite + API on 127.0.0.1)  
+2. Edit `workflow.yaml` / migrate hand-authored packs (D1: `ship-review` migrate does not overwrite `AGENT.md`)  
+3. Save syncs `agents/<name>/` → `skills/orchestration/<name>/agent/`  
+
 ### Architecture improvement (not a merge gate)
 
 1. `improve-codebase-architecture`  
@@ -120,6 +126,7 @@ Status legend: unmarked = skill exists today; `（planned Wave N）` = not lande
 | `work-lanes` | Outbox lanes A/B/C + remote gates |
 | `ship-gate` | Pre-ship: `run-gates` + merge-code-review |
 | `ship-review` | Outbound review script (`agents/ship-review`); handoff to ship-gate for gates |
+| `agent-flow-studio` | Launch local graph workbench for role packs (`kits/agent-flow-studio`) |
 | `build-loop` | **Thin entry only** — opens this skill-local menu and matches a chain |
 | `clarify-and-plan` | Lane A: clarify, design, plan (hard-gate before code) |
 | `architecture-decision-records` | ADR under `docs/adr/` |
