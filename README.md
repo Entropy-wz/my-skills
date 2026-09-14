@@ -40,6 +40,7 @@ flowchart TB
     S5["文档: delivery T-P-D / doc-verify / case-card"]
     S6["前端: frontend-craft / browser-verify"]
     S7["CI: parallel-ci-triage"]
+    S8["学习: learn-notes / learn-chat / learn-exam"]
   end
 
   subgraph KT["Kits 云"]
@@ -82,7 +83,8 @@ flowchart LR
 │   ├── review/                  # merge-CR, code-review, hunk, commit
 │   ├── docs/                    # delivery, doc-verify, case-card
 │   ├── frontend/                # frontend-craft, browser-verify
-│   └── ci/                      # parallel-ci-triage
+│   ├── ci/                      # parallel-ci-triage
+│   └── learning/                # learn-notes, learn-chat, learn-exam
 ├── kits/                        # 可运行多部件（资产；可选 skill/）
 │   ├── README.md                # 边界：编排在 skills/，禁止同名双 SKILL
 │   ├── _template/
@@ -100,6 +102,16 @@ flowchart LR
 ```
 
 更细约定：[`skills/README.md`](skills/README.md)、[`kits/README.md`](kits/README.md)、[`agents/README.md`](agents/README.md)、[ADR-001](docs/adr/001-toolkit-three-layer-layout.md)、[ADR-002](docs/adr/002-agents-as-role-packs.md)。
+
+## 大学课程学习
+
+| Skill | 用途 |
+| --- | --- |
+| [`learn-notes`](skills/learning/learn-notes/SKILL.md) | 按课件章节生成 Markdown 讲义、总览和目录 |
+| [`learn-chat`](skills/learning/learn-chat/SKILL.md) | 围绕单份课件在对话中讲解，逐轮保存学习笔记 |
+| [`learn-exam`](skills/learning/learn-exam/SKILL.md) | 期末知识梳理、做题讲解、模拟试卷与习题集 |
+
+只在仓库中保存时无需执行安装脚本。可在对话中指定对应的 `SKILL.md` 文件，请 AI 按其中说明处理课程材料。
 
 ## 安装到本地
 

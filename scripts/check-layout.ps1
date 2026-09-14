@@ -299,11 +299,12 @@ foreach ($label in @(
         @{ Re = '审查:'; Name = 'review' },
         @{ Re = '文档:'; Name = 'docs' },
         @{ Re = '前端:'; Name = 'frontend' },
-        @{ Re = 'CI:'; Name = 'ci' }
+        @{ Re = 'CI:'; Name = 'ci' },
+        @{ Re = '学习:'; Name = 'learning' }
     )) {
     if ($readme -match $label.Re) { $cloudCats += $label.Name }
 }
-$expectedCloud = @('orchestration', 'design', 'quality', 'review', 'docs', 'frontend', 'ci')
+$expectedCloud = @('orchestration', 'design', 'quality', 'review', 'docs', 'frontend', 'ci', 'learning')
 if ($cloudCats.Count -eq 0) {
     Write-Host "[FAIL] README cloud category labels missing (expected 编排:/设计:/…/CI:)"
     $failed = $true

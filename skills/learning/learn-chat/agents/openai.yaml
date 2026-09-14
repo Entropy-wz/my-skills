@@ -1,0 +1,4 @@
+interface:
+  display_name: "大学课程 · 课件陪学"
+  short_description: "围绕单份大学课件在对话中逐段讲解和答疑，并持续保存学习笔记"
+  default_prompt: "请使用 $learn-chat，带我学习这份大学课件，先在对话中逐段讲解，再把讲过的内容保存为 Markdown。"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "大学课程 · 期末复习"
+  short_description: "梳理大学课程知识树、名词与关系，讲解习题并生成试卷和独立答案"
+  default_prompt: "请使用 $learn-exam，依据这门大学课程的材料整理期末重点、知识树和名词表，并生成一份附独立答案解析的练习。"
